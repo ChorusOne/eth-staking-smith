@@ -1,5 +1,5 @@
-use eth2_keystore::*;
-use eth2_wallet::*;
+use eth2_keystore::{keypair_from_secret, Keystore, KeystoreBuilder};
+use eth2_wallet::{recover_validator_secret, KeyType};
 use rand::{distributions::Alphanumeric, Rng};
 
 lazy_static! {
@@ -49,6 +49,8 @@ mod test {
     use super::{wallet_password_bytes, wallet_to_keystores};
     use bip39::{Language, Mnemonic};
     use eth2_wallet::*;
+    use pretty_assertions::assert_eq;
+    use test_log::test;
 
     const NAME: &str = "Wallet McWalletface";
     const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";
