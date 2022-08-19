@@ -18,7 +18,7 @@ pub(crate) fn wallet_password_bytes() -> [u8; 13] {
     WALLET_PASSWORD.as_slice().try_into().unwrap()
 }
 
-/// Given eth2 wallet builder, create N keystores encrypted with password.
+/// Given eth2 wallet, create N keystores encrypted with password.
 #[allow(dead_code)]
 pub(crate) fn wallet_to_keystores(
     wallet: eth2_wallet::Wallet,
@@ -29,10 +29,11 @@ pub(crate) fn wallet_to_keystores(
 
     (0..n)
         .map(|idx| {
-            let (secret, path) = recover_validator_secret(&wallet, &pass, idx, KeyType::Voting)
-                .expect("Can not recover validator secret from provided wallet");
+            let (voting_secret, path) =
+                recover_validator_secret(&wallet, &pass, idx, KeyType::Voting)
+                    .expect("Can not recover validator secret from provided wallet");
 
-            let keypair = keypair_from_secret(secret.as_bytes())
+            let keypair = keypair_from_secret(voting_secret.as_bytes())
                 .expect("Can not initialize keypair from provided wallet");
 
             KeystoreBuilder::new(&keypair, password, format!("{}", path))
