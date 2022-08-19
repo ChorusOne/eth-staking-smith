@@ -12,14 +12,13 @@ lazy_static! {
         .collect();
 }
 
+#[allow(dead_code)]
 fn get_eth2_wallet(existing_mnemonic: Option<&[u8]>) -> Result<Wallet, Error> {
-    let seed_phrase: String = if existing_mnemonic.is_none() {
+    let seed_phrase: String = if let Some(found_mnemonic) = existing_mnemonic {
+        std::str::from_utf8(found_mnemonic).unwrap().to_string()
+    } else {
         let new_mnemonic = Mnemonic::new(MnemonicType::Words24, Language::English);
         new_mnemonic.phrase().to_string()
-    } else {
-        std::str::from_utf8(existing_mnemonic.unwrap())
-            .unwrap()
-            .to_string()
     };
 
     let wallet_name = uuid::Uuid::new_v4().to_string();
