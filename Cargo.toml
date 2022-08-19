@@ -21,7 +21,11 @@ hex = "0.4"
 lazy_static = "^1.4"
 log = "^0.4"
 rand = "^0.8"
+serde = "1.0.115"
+serde_derive = "1.0"
+serde_json = "1.0"
 tiny-bip39 = "^0.8.0"
+tree_hash = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 types = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 
 [patch.crates-io]

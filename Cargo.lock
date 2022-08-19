@@ -1532,8 +1532,12 @@ dependencies = [
  "log",
  "pretty_assertions",
  "rand 0.8.5",
+ "serde",
+ "serde_derive",
+ "serde_json",
  "test-log",
  "tiny-bip39",
+ "tree_hash",
  "types",
 ]
 
