@@ -1,25 +1,8 @@
+use crate::utils::wallet_password_bytes;
 use eth2_keystore::{keypair_from_secret, Keystore, KeystoreBuilder};
 use eth2_wallet::{recover_validator_secret, KeyType};
-use rand::{distributions::Alphanumeric, Rng};
-
-lazy_static! {
-    /// Generate temporary random password of 32 bytes.
-    /// This password is only used to encrypt Wallet in memory and dropped
-    /// after the program concludes.
-    pub static ref WALLET_PASSWORD: Vec<u8> = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(13)
-        .collect();
-}
-
-/// Convert random password into byte slices.
-#[allow(dead_code)]
-pub(crate) fn wallet_password_bytes() -> [u8; 13] {
-    WALLET_PASSWORD.as_slice().try_into().unwrap()
-}
 
 /// Given eth2 wallet, create N keystores encrypted with password.
-#[allow(dead_code)]
 pub(crate) fn wallet_to_keystores(
     wallet: eth2_wallet::Wallet,
     n: u32,
@@ -47,7 +30,8 @@ pub(crate) fn wallet_to_keystores(
 #[cfg(test)]
 mod test {
 
-    use super::{wallet_password_bytes, wallet_to_keystores};
+    use super::wallet_to_keystores;
+    use crate::utils::wallet_password_bytes;
     use bip39::{Language, Mnemonic};
     use eth2_wallet::*;
     use pretty_assertions::assert_eq;

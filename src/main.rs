@@ -1,5 +1,5 @@
-use riir_deposit_cli::keystore::WALLET_PASSWORD;
+use std::process::exit;
 
 pub fn main() {
-    println!("{:?}", String::from_utf8(WALLET_PASSWORD.to_vec()));
+    exit(1);
 }

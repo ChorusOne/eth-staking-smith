@@ -3,11 +3,9 @@ use eth2_network_config::Eth2NetworkConfig;
 use std::{path::Path, str::FromStr};
 use types::{ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, Signature};
 
-#[allow(dead_code)]
 const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
     48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
 ];
-#[allow(dead_code)]
 const ETH2_CREDENTIALS_PREFIX: &[u8] = &[48, 48];
 
 #[derive(Debug, Eq, PartialEq)]
@@ -22,8 +20,7 @@ pub enum DepositError {
 /// Given the network specification, validator keystore
 /// and withdrawal credentials
 /// generate deposit data
-#[allow(dead_code)]
-fn keystore_to_deposit(
+pub(crate) fn keystore_to_deposit(
     keystore: Keystore,
     decryption_password: &[u8],
     // Hex representation of withdrawal credentials
@@ -31,7 +28,7 @@ fn keystore_to_deposit(
     deposit_amount_gwei: u64,
     network: String,
     chain_spec_file: Option<String>,
-) -> Result<DepositData, DepositError> {
+) -> Result<(DepositData, ChainSpec), DepositError> {
     // Validate data input
 
     if withdrawal_credentials.len() != 64 {
@@ -116,7 +113,7 @@ fn keystore_to_deposit(
     };
 
     deposit_data.signature = deposit_data.create_signature(&keypair.sk, &spec);
-    Ok(deposit_data)
+    Ok((deposit_data, spec))
 }
 
 #[cfg(test)]
@@ -140,7 +137,7 @@ mod test {
     #[test]
     fn test_deposit_mainnet_eth1_withdrawal() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
-        let deposit_data = keystore_to_deposit(
+        let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
             WITHDRAWAL_CREDENTIALS_ETH1,
@@ -173,7 +170,7 @@ mod test {
     #[test]
     fn test_deposit_mainnet_eth2_withdrawal() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
-        let deposit_data = keystore_to_deposit(
+        let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
             WITHDRAWAL_CREDENTIALS_ETH2,
@@ -203,7 +200,7 @@ mod test {
     #[test]
     fn test_deposit_goerli() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
-        let deposit_data = keystore_to_deposit(
+        let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
             WITHDRAWAL_CREDENTIALS_ETH2,
@@ -231,7 +228,7 @@ mod test {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
         let mut manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         manifest.push("tests/resources/testnet.yaml");
-        let deposit_data = keystore_to_deposit(
+        let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
             WITHDRAWAL_CREDENTIALS_ETH2,
