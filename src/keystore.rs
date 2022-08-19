@@ -4,7 +4,7 @@ use eth2_wallet::{recover_validator_secret, KeyType};
 
 /// Given eth2 wallet, create N keystores encrypted with password.
 pub(crate) fn wallet_to_keystores(
-    wallet: eth2_wallet::Wallet,
+    wallet: &eth2_wallet::Wallet,
     n: u32,
     password: &[u8],
 ) -> Vec<Keystore> {
@@ -53,7 +53,7 @@ mod test {
     #[test]
     fn test_wallet_to_keystore() {
         let wallet = wallet_from_seed();
-        let keystores = wallet_to_keystores(wallet, 2, VOTING_KEYSTORE_PASSWORD);
+        let keystores = wallet_to_keystores(&wallet, 2, VOTING_KEYSTORE_PASSWORD);
 
         assert_eq!(keystores.len(), 2);
 
