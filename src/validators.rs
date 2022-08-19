@@ -161,7 +161,6 @@ impl<'a> Validators<'a> {
 mod test {
 
     use super::Validators;
-    use bip39::{Language, Mnemonic};
     use eth2_wallet::*;
     use test_log::test;
 
