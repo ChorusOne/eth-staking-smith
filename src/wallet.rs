@@ -12,7 +12,6 @@ lazy_static! {
         .collect();
 }
 
-#[allow(dead_code)]
 fn get_eth2_wallet(existing_mnemonic: Option<&[u8]>) -> Result<Wallet, Error> {
     let seed_phrase: String = if let Some(found_mnemonic) = existing_mnemonic {
         std::str::from_utf8(found_mnemonic).unwrap().to_string()
