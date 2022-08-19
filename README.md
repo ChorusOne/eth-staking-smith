@@ -1,6 +1,8 @@
 eth-staking-smith
 ================
 
+# Introduction
+
 Command-line tool to facilitate key and deposit data generation for ethereum proof-of-stake validators.
 
 Why we need yet another keystore / deposit tool:
@@ -10,6 +12,24 @@ Why we need yet another keystore / deposit tool:
 3. opt-out of writing to filesystem for better security
 
 # Usage
+
+```
+cargo build
+```
+
+## Existing mnemonic 
+
+Regenerate key and deposit data with existing mnemonic:
+
+```
+./target/debug/eth-staking-smith existing-mnemonic --help
+```
+
+### Example command:
+
+```
+./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password test --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_address "0100000000000000000000000000000000000000000000000000000000000001"
+```
 
 <!-- 
 required to cater for our use case: 
@@ -23,7 +43,7 @@ required to cater for our use case:
 # Implementation Details 
 To avoid heavy lifting, we're interfacing [Lighthouse account manager](https://github.com/sigp/lighthouse/blob/stable/account_manager), but optimizing it in a way so all operations are done in memory and key material is never written to filesystem during the generation to cater for our use case.
 
-# Glossary
+# Glossary (WIP)
 
 | Term      | Description |
 | ----------- | ----------- |
@@ -38,11 +58,11 @@ To avoid heavy lifting, we're interfacing [Lighthouse account manager](https://g
 # Getting involved
 
 ## Major tasks tdb for first iteration:
-- [ ] Create eth2 Wallet from Mnemonic
-- [ ] Create validator Keystore from eth2 Wallet
-- [ ] Create eth1 deposit data from validator Keystore
-- [ ] Create N validators from Mnemonic
-- [ ] create cli interface to cater for our use case
+- [X] Create eth2 Wallet from Mnemonic
+- [X] Create validator Keystore from eth2 Wallet
+- [X] Create eth1 deposit data from validator Keystore
+- [X] Create N validators from Mnemonic
+- [X] create basic cli interface to cater for our use case
 
 ## Upcoming 
 - [ ] extend cli interface
