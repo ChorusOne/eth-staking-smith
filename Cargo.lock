@@ -1539,6 +1539,7 @@ dependencies = [
  "tiny-bip39",
  "tree_hash",
  "types",
+ "uuid",
 ]
 
 [[package]]
