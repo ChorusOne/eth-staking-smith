@@ -29,26 +29,28 @@ pub(crate) fn get_eth2_wallet(existing_mnemonic: Option<&[u8]>) -> Result<(Walle
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::{assert_eq, assert_ne};
 
     const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";
+    // Since it is impossible to recover phrase from wallet,
+    // use internal seed as an etalon here.
+    const PHRASE_SEED: &str = "5017c7d08b4b15b05e7f03df3c36b3597eb38ac1bb68b0a33f93262b035e555417288484c982e9c3d1831be2ec5acf6d49230bd3f25d22bf8dd35677c12da7c3";
 
-    fn get_phrase_from_wallet(wallet: Wallet) -> String {
+    fn get_seed_from_wallet(wallet: Wallet) -> String {
         let pass = wallet_password_bytes();
-        let wallet_mnemonic = wallet.decrypt_seed(&pass).unwrap();
-        std::str::from_utf8(wallet_mnemonic.as_bytes())
-            .unwrap()
-            .to_string()
+        let wallet_seed = wallet.decrypt_seed(&pass).unwrap();
+        hex::encode(wallet_seed)
     }
 
     #[test]
     fn it_creates_wallet_with_new_mnemonic() {
         let (wallet, _) = get_eth2_wallet(None).unwrap();
-        assert_ne!(PHRASE, get_phrase_from_wallet(wallet));
+        assert_ne!(PHRASE_SEED, get_seed_from_wallet(wallet));
     }
 
     #[test]
     fn it_creates_wallet_with_existing_mnemonic() {
         let (wallet, _) = get_eth2_wallet(Some(PHRASE.as_bytes())).unwrap();
-        assert_eq!(PHRASE, get_phrase_from_wallet(wallet));
+        assert_eq!(PHRASE_SEED, get_seed_from_wallet(wallet));
     }
 }
