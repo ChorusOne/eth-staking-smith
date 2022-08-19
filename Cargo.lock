@@ -255,6 +255,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap"
+version = "2.34.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c"
+dependencies = [
+ "ansi_term",
+ "atty",
+ "bitflags",
+ "strsim 0.8.0",
+ "textwrap",
+ "unicode-width",
+ "vec_map",
+]
+
+[[package]]
 name = "compare_fields"
 version = "0.2.0"
 source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
@@ -425,7 +440,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
- "strsim",
+ "strsim 0.10.0",
  "syn",
 ]
 
@@ -574,6 +589,30 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
+]
+
+[[package]]
+name = "eth-staking-smith"
+version = "0.1.0-dev"
+dependencies = [
+ "clap",
+ "env_logger",
+ "eth2_keystore",
+ "eth2_network_config",
+ "eth2_wallet",
+ "hex",
+ "lazy_static",
+ "log",
+ "pretty_assertions",
+ "rand 0.8.5",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "test-log",
+ "tiny-bip39",
+ "tree_hash",
+ "types",
+ "uuid",
 ]
 
 [[package]]
@@ -1520,29 +1559,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "riir-deposit-cli"
-version = "0.1.0-dev"
-dependencies = [
- "env_logger",
- "eth2_keystore",
- "eth2_network_config",
- "eth2_wallet",
- "hex",
- "lazy_static",
- "log",
- "pretty_assertions",
- "rand 0.8.5",
- "serde",
- "serde_derive",
- "serde_json",
- "test-log",
- "tiny-bip39",
- "tree_hash",
- "types",
- "uuid",
-]
-
-[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1789,6 +1805,12 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strsim"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
+
+[[package]]
+name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
@@ -1892,6 +1914,15 @@ source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c9
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "textwrap"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
+dependencies = [
+ "unicode-width",
 ]
 
 [[package]]
@@ -2085,6 +2116,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-width"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ed742d4ea2bd1176e236172c8429aaf54486e7ac098db29ffe6529e0ce50973"
+
+[[package]]
 name = "unicode-xid"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2111,6 +2148,12 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
+name = "vec_map"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version_check"
