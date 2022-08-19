@@ -6,6 +6,3 @@ pub(crate) mod wallet;
 
 pub use deposit::DepositError;
 pub use validators::*;
-
-#[macro_use]
-extern crate lazy_static;
