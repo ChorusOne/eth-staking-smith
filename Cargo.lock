@@ -597,6 +597,7 @@ version = "0.1.0-dev"
 dependencies = [
  "clap",
  "env_logger",
+ "eth2_key_derivation",
  "eth2_keystore",
  "eth2_network_config",
  "eth2_wallet",
