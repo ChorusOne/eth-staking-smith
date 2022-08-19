@@ -27,6 +27,7 @@ serde_json = "1.0"
 tiny-bip39 = "^0.8.0"
 tree_hash = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 types = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
+uuid = { version = "0.8.1", features = ["v4"] }
 
 [patch.crates-io]
 eth2_hashing = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
