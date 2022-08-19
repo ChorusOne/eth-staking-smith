@@ -163,6 +163,7 @@ mod test {
     use super::Validators;
     use eth2_wallet::*;
     use test_log::test;
+    use bip39::{Mnemonic, Language};
 
     const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";
 
