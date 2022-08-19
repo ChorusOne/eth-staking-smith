@@ -13,7 +13,7 @@ pub(crate) fn wallet_to_keystores(
     (0..n)
         .map(|idx| {
             let (voting_secret, path) =
-                recover_validator_secret(&wallet, &pass, idx, KeyType::Voting)
+                recover_validator_secret(wallet, &pass, idx, KeyType::Voting)
                     .expect("Can not recover validator secret from provided wallet");
 
             let keypair = keypair_from_secret(voting_secret.as_bytes())

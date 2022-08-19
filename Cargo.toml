@@ -1,5 +1,5 @@
 [package]
-name = "riir-deposit-cli"
+name = "eth-staking-smith"
 version = "0.1.0-dev"
 edition = "2021"
 description = "Deposit CLI replacement library"
@@ -9,10 +9,11 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "riir_deposit_cli"
+name = "eth_staking_smith"
 path = "src/lib.rs"
 
 [dependencies]
+clap = "^2.33"
 eth2_keystore = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_network_config = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_wallet = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}

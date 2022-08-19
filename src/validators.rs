@@ -63,7 +63,7 @@ impl<'a> Validators<'a> {
                 .build()
                 .unwrap();
         Self {
-            mnemonic_phrase: mnemonic_phrase,
+            mnemonic_phrase,
             keystores: vec![],
             password,
             wallet,
@@ -173,7 +173,6 @@ impl<'a> Validators<'a> {
 mod test {
 
     use super::Validators;
-    use eth2_wallet::*;
     use test_log::test;
 
     const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";

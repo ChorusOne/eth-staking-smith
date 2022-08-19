@@ -148,7 +148,7 @@ mod test {
         .unwrap();
 
         // Signature asserted here is generated with
-        // python ./staking_deposit/deposit.py existing-mnemonic --eth1_withdrawal_address 0x0000000000000000000000000000000000000001 --keystore_password test
+        // python ./staking_deposit/deposit.py existing-mnemonic --eth1_withdrawal_address 0x010000000000000000000000000000000000000001 --keystore_password test
 
         // **[Warning] you are setting an Eth1 address as your withdrawal address. Please ensure that you have control over this address.**
 
