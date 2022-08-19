@@ -7,7 +7,7 @@ use eth2_wallet::WalletBuilder;
 use serde::Serialize;
 use tree_hash::TreeHash;
 
-pub struct Eth2Validators<'a> {
+pub struct Validators<'a> {
     mnemonic: &'a Mnemonic,
     keystores: Vec<Keystore>,
     password: &'a [u8],
@@ -40,7 +40,7 @@ struct ValidatorExports {
 }
 
 /// Ethereum Merge proof-of-stake validators generator.
-impl<'a> Eth2Validators<'a> {
+impl<'a> Validators<'a> {
     // pub fn new(mnemonic_phrase: &[u8], password: &[u8]) -> Self
 
     /// Initialize wallet from mnemonic
@@ -160,7 +160,7 @@ impl<'a> Eth2Validators<'a> {
 #[cfg(test)]
 mod test {
 
-    use super::Eth2Validators;
+    use super::Validators;
     use bip39::{Language, Mnemonic};
     use eth2_wallet::*;
     use test_log::test;
@@ -170,7 +170,7 @@ mod test {
     #[test]
     fn test_export_validators() {
         let mnemonic = Mnemonic::from_phrase(PHRASE, Language::English).unwrap();
-        let mut validators = Eth2Validators::from_mnemonic(&mnemonic, "test".as_bytes());
+        let mut validators = Validators::from_mnemonic(&mnemonic, "test".as_bytes());
         validators.seed_validators(1);
         let export = validators
             .export(
