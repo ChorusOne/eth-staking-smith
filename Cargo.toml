@@ -14,17 +14,23 @@ path = "src/lib.rs"
 
 [dependencies]
 eth2_keystore = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
+eth2_network_config = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_wallet = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 env_logger = "^0.6.0"
+hex = "0.4"
 lazy_static = "^1.4"
+log = "^0.4"
 rand = "^0.8"
+tiny-bip39 = "^0.8.0"
+types = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 
 [patch.crates-io]
 eth2_hashing = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_serde_utils = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_ssz = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
+eth2_ssz_types = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 tree_hash = { git = "https://github.com/sigp/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 
 [dev-dependencies]
-hex = "0.4"
-tiny-bip39 = "^0.8.0"
+test-log = "^0.2"
+pretty_assertions = "^1.2"
