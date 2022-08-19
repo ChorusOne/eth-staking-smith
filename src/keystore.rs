@@ -1,4 +1,4 @@
-use crate::utils::wallet_password_bytes;
+use crate::utils::{pbkdf2, wallet_password_bytes};
 use eth2_keystore::{keypair_from_secret, Keystore, KeystoreBuilder};
 use eth2_wallet::{recover_validator_secret, KeyType};
 
@@ -19,8 +19,10 @@ pub(crate) fn wallet_to_keystores(
             let keypair = keypair_from_secret(voting_secret.as_bytes())
                 .expect("Can not initialize keypair from provided wallet");
 
+            // Use pbkdf2 crypt because it is faster
             KeystoreBuilder::new(&keypair, password, format!("{}", path))
                 .expect("Can not create KeystoreBuilder from provided wallet")
+                .kdf(pbkdf2())
                 .build()
                 .expect("Failed to build keystore")
         })
