@@ -1,8 +1,8 @@
 pub(crate) mod deposit;
 pub(crate) mod keystore;
+pub(crate) mod seed;
 pub(crate) mod utils;
 pub mod validators;
-pub(crate) mod wallet;
 
 pub use deposit::DepositError;
 pub use validators::*;
