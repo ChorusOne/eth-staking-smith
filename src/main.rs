@@ -110,7 +110,7 @@ fn existing_mnemonic<'a>(sub_match: &ArgMatches<'a>) {
         .expect("missing withdrawal address");
 
     let mut validators = Validators::new(Some(mnemonic.as_bytes()), keystore_password.as_bytes());
-    validators.seed_validators(num_validators);
+    validators.init_validators(num_validators);
     let export = validators
         .export(
             chain.to_string(),

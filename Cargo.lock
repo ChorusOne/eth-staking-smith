@@ -602,7 +602,6 @@ dependencies = [
  "eth2_network_config",
  "eth2_wallet",
  "hex",
- "lazy_static",
  "log",
  "pretty_assertions",
  "rand 0.8.5",

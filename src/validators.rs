@@ -1,10 +1,8 @@
 use crate::deposit::{keystore_to_deposit, DepositError};
-use crate::keystore::wallet_to_keystores;
-use crate::utils::wallet_password_bytes;
-use crate::wallet::get_eth2_wallet;
-use bip39::Mnemonic;
+use crate::keystore::seed_to_keystores;
+use crate::seed::get_eth2_seed;
+use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
-use eth2_wallet::{Wallet, WalletBuilder};
 use serde::Serialize;
 use tree_hash::TreeHash;
 
@@ -12,7 +10,7 @@ pub struct Validators<'a> {
     mnemonic_phrase: String,
     keystores: Vec<Keystore>,
     password: &'a [u8],
-    wallet: Wallet,
+    seed: Bip39Seed,
 }
 
 #[derive(Serialize)]
@@ -43,36 +41,31 @@ struct ValidatorExports {
 
 /// Ethereum Merge proof-of-stake validators generator.
 impl<'a> Validators<'a> {
+    /// Initialize seed from mnemonic bytes
     pub fn new(mnemonic_phrase: Option<&[u8]>, password: &'a [u8]) -> Self {
-        let (wallet, phrase_string) = get_eth2_wallet(mnemonic_phrase).unwrap();
+        let (seed, phrase_string) = get_eth2_seed(mnemonic_phrase);
         Self {
             mnemonic_phrase: phrase_string,
             keystores: vec![],
             password,
-            wallet,
+            seed,
         }
     }
 
-    /// Initialize wallet from mnemonic
+    /// Initialize seed from mnemonic object
     pub fn from_mnemonic(mnemonic: &'a Mnemonic, password: &'a [u8]) -> Self {
-        let pass = wallet_password_bytes().to_owned();
         let mnemonic_phrase = mnemonic.clone().into_phrase();
-        let wallet =
-            WalletBuilder::from_mnemonic(mnemonic, &pass, "Ethereum 2 Validator Set".into())
-                .unwrap()
-                .build()
-                .unwrap();
         Self {
             mnemonic_phrase,
             keystores: vec![],
             password,
-            wallet,
+            seed: Bip39Seed::new(mnemonic, ""),
         }
     }
 
     /// Generate N keystores from given seed
-    pub fn seed_validators(&mut self, n: u32) {
-        for keystore in wallet_to_keystores(&self.wallet, n, self.password) {
+    pub fn init_validators(&mut self, n: u32) {
+        for keystore in seed_to_keystores(&self.seed, n, self.password) {
             self.keystores.push(keystore);
         }
     }
@@ -180,7 +173,7 @@ mod test {
     #[test]
     fn test_export_validators() {
         let mut validators = Validators::new(Some(PHRASE.as_bytes()), "test".as_bytes());
-        validators.seed_validators(1);
+        validators.init_validators(1);
         let export = validators
             .export(
                 "mainnet".to_string(),
