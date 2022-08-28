@@ -1,5 +1,5 @@
 use crate::deposit::{keystore_to_deposit, DepositError};
-use crate::keystore::seed_to_keystores;
+use crate::keystore::{seed_to_keystores, VotingKeyMaterial};
 use crate::seed::get_eth2_seed;
 use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
@@ -8,9 +8,8 @@ use tree_hash::TreeHash;
 
 pub struct Validators<'a> {
     mnemonic_phrase: String,
-    keystores: Vec<Keystore>,
+    key_material: Vec<VotingKeyMaterial>,
     password: &'a [u8],
-    seed: Bip39Seed,
 }
 
 #[derive(Serialize)]
@@ -41,32 +40,46 @@ struct ValidatorExports {
 
 /// Ethereum Merge proof-of-stake validators generator.
 impl<'a> Validators<'a> {
+    /// Initernal function to initialize key material from seed.
+    fn key_material_from_seed(
+        seed: &'a Bip39Seed,
+        password: &'a [u8],
+        num_validators: Option<u32>,
+    ) -> Vec<VotingKeyMaterial> {
+        let mut key_material = vec![];
+        for voting_keystore in seed_to_keystores(seed, num_validators.unwrap_or(1), password) {
+            key_material.push(voting_keystore);
+        }
+        key_material
+    }
+
     /// Initialize seed from mnemonic bytes
-    pub fn new(mnemonic_phrase: Option<&[u8]>, password: &'a [u8]) -> Self {
+    pub fn new(
+        mnemonic_phrase: Option<&[u8]>,
+        password: &'a [u8],
+        num_validators: Option<u32>,
+    ) -> Self {
         let (seed, phrase_string) = get_eth2_seed(mnemonic_phrase);
+
         Self {
             mnemonic_phrase: phrase_string,
-            keystores: vec![],
+            key_material: Validators::key_material_from_seed(&seed, password, num_validators),
             password,
-            seed,
         }
     }
 
     /// Initialize seed from mnemonic object
-    pub fn from_mnemonic(mnemonic: &'a Mnemonic, password: &'a [u8]) -> Self {
+    pub fn from_mnemonic(
+        mnemonic: &'a Mnemonic,
+        password: &'a [u8],
+        num_validators: Option<u32>,
+    ) -> Self {
         let mnemonic_phrase = mnemonic.clone().into_phrase();
+        let (seed, _) = get_eth2_seed(Some(mnemonic.clone().into_phrase().as_str().as_bytes()));
         Self {
             mnemonic_phrase,
-            keystores: vec![],
+            key_material: Validators::key_material_from_seed(&seed, password, num_validators),
             password,
-            seed: Bip39Seed::new(mnemonic, ""),
-        }
-    }
-
-    /// Generate N keystores from given seed
-    pub fn init_validators(&mut self, n: u32) {
-        for keystore in seed_to_keystores(&self.seed, n, self.password) {
-            self.keystores.push(keystore);
         }
     }
 
@@ -114,14 +127,10 @@ impl<'a> Validators<'a> {
         let mut private_keys: Vec<String> = vec![];
         let mut deposit_data: Vec<DepositExport> = vec![];
 
-        for keystore in self.keystores.iter() {
+        for key_with_store in self.key_material.iter() {
+            let keystore = key_with_store.keystore.clone();
             keystores.push(keystore.clone());
-            let secret_key = keystore
-                .decrypt_keypair(self.password)
-                .unwrap()
-                .sk
-                .serialize();
-            private_keys.push(hex::encode(secret_key.as_bytes()));
+            private_keys.push(hex::encode(key_with_store.voting_secret.as_bytes()));
             let public_key = keystore.pubkey().to_string();
             let (deposit, chain_spec) = keystore_to_deposit(
                 keystore.clone(),
@@ -172,8 +181,7 @@ mod test {
 
     #[test]
     fn test_export_validators() {
-        let mut validators = Validators::new(Some(PHRASE.as_bytes()), "test".as_bytes());
-        validators.init_validators(1);
+        let validators = Validators::new(Some(PHRASE.as_bytes()), "test".as_bytes(), Some(1));
         let export = validators
             .export(
                 "mainnet".to_string(),
