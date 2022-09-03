@@ -119,9 +119,9 @@ pub(crate) fn keystore_to_deposit(
     let keypair = match keypair_from_secret(key_material.voting_secret.as_bytes()) {
         Ok(kp) => kp,
         Err(e) => {
-            log::debug!("Unable to decrypt keypair to make a deposit: {:?}", e);
+            log::debug!("Invalid voting key material passed: {:?}", e);
             return Err(DepositError::InvalidKeystore(
-                "Invalid keystore or password".to_string(),
+                "Invalid key material or password".to_string(),
             ));
         }
     };
