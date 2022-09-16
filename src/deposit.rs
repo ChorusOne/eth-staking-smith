@@ -1,7 +1,10 @@
+use crate::utils::*;
 use eth2_keystore::Keystore;
 use eth2_network_config::Eth2NetworkConfig;
-use std::{path::Path, str::FromStr};
-use types::{ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, Signature};
+use std::path::Path;
+use types::{
+    ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, PublicKey, Signature,
+};
 
 const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
     48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -24,26 +27,54 @@ pub(crate) fn keystore_to_deposit(
     keystore: Keystore,
     decryption_password: &[u8],
     // Hex representation of withdrawal credentials
-    withdrawal_credentials: &[u8],
+    withdrawal_credentials: Option<&[u8]>,
+    // withdrawal public key, needed to generate credentials if not present
+    withdrawal_pk: Option<PublicKey>,
     deposit_amount_gwei: u64,
     network: String,
     chain_spec_file: Option<String>,
 ) -> Result<(DepositData, ChainSpec), DepositError> {
     // Validate data input
 
-    if withdrawal_credentials.len() != 64 {
+    let withdrawal_credentials = match withdrawal_credentials {
+        Some(creds) => {
+            if !creds.starts_with(ETH1_CREDENTIALS_PREFIX)
+                && !creds.starts_with(ETH2_CREDENTIALS_PREFIX)
+            {
+                return Err(DepositError::InvalidWithdrawalCredentials(
+                    "Invalid withdrawal credentials prefix".to_string(),
+                ));
+            };
+
+            hex::decode(creds).unwrap()
+        }
+        None => {
+            // if no withdrawal address passed in, generate credentials from withdrawal public key
+
+            if withdrawal_pk.is_none() {
+                return Err(DepositError::InvalidWithdrawalCredentials(
+                    "Could not retrieve withdrawal public key from key matieral".to_string(),
+                ));
+            }
+
+            let withdrawal = get_withdrawal_credentials(&withdrawal_pk.unwrap(), 0);
+
+            if withdrawal.starts_with(ETH2_CREDENTIALS_PREFIX) {
+                return Err(DepositError::InvalidWithdrawalCredentials(
+                    "Invalid withdrawal credentials prefix".to_string(),
+                ));
+            }
+            withdrawal
+        }
+    };
+
+    if withdrawal_credentials.len() != 32 {
         return Err(DepositError::InvalidWithdrawalCredentials(
-            "Invalid withdrawal credentials length, should be 64".to_string(),
+            "Invalid withdrawal credentials length, should be 32".to_string(),
         ));
     };
 
-    if !withdrawal_credentials.starts_with(ETH1_CREDENTIALS_PREFIX)
-        && !withdrawal_credentials.starts_with(ETH2_CREDENTIALS_PREFIX)
-    {
-        return Err(DepositError::InvalidWithdrawalCredentials(
-            "Invalid withdrawal credentials prefix".to_string(),
-        ));
-    };
+    let credentials_hash = Hash256::from_slice(&withdrawal_credentials);
 
     // For simplicity, support only 32Eth deposits
     if deposit_amount_gwei != 32_000_000_000 {
@@ -84,17 +115,6 @@ pub(crate) fn keystore_to_deposit(
         ));
     }
 
-    let withdrawal_credentials_str = match String::from_utf8(withdrawal_credentials.to_vec()) {
-        Ok(str) => str,
-        Err(e) => {
-            log::error!("Invalid withdrawal credentials string: {}", e);
-            return Err(DepositError::InvalidWithdrawalCredentials(
-                "Unable to decode withdrawal credentials".to_string(),
-            ));
-        }
-    };
-    let credentials_hash = Hash256::from_str(&withdrawal_credentials_str).unwrap();
-
     let keypair = match keystore.decrypt_keypair(decryption_password) {
         Ok(kp) => kp,
         Err(e) => {
@@ -122,9 +142,10 @@ mod test {
     use eth2_keystore::Keystore;
     use hex;
     use pretty_assertions::assert_eq;
+    use types::PublicKey;
 
     use super::keystore_to_deposit;
-    use std::path::PathBuf;
+    use std::{path::PathBuf, str::FromStr};
     use test_log::test;
 
     const KEYSTORE: &str = r#"{"crypto": {"kdf": {"function": "scrypt", "params": {"dklen": 32, "n": 262144, "r": 8, "p": 1, "salt": "b304b4590787ca795e4d9b4b0d15789063899db8fc0a9bc55739a5c7c4fc046e"}, "message": ""}, "checksum": {"function": "sha256", "params": {}, "message": "ab4a1de483a5b93c93aeaa6e5cae0603c8cdc8105be4581c52dcc48895e2aa98"}, "cipher": {"function": "aes-128-ctr", "params": {"iv": "36738842a9bfe988c385475314bb5ecb"}, "message": "c154a583e467cdf3e6010b65fcb96308e591bde8caca4b4df805ecd0d1809b0e"}}, "description": "", "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6", "path": "m/12381/3600/0/0/0", "uuid": "296e52b6-deee-4302-b970-9fce9f7269ac", "version": 4}"#;
@@ -140,7 +161,8 @@ mod test {
         let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
-            WITHDRAWAL_CREDENTIALS_ETH1,
+            Some(WITHDRAWAL_CREDENTIALS_ETH1),
+            None,
             32_000_000_000,
             "mainnet".to_string(),
             None,
@@ -173,7 +195,8 @@ mod test {
         let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
-            WITHDRAWAL_CREDENTIALS_ETH2,
+            Some(WITHDRAWAL_CREDENTIALS_ETH2),
+            None,
             32_000_000_000,
             "mainnet".to_string(),
             None,
@@ -182,6 +205,8 @@ mod test {
 
         // Signature asserted here is generated with
         // python ./staking_deposit/deposit.py existing-mnemonic --keystore_password test
+
+        println!("{:?}", deposit_data);
 
         // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
         // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
@@ -198,12 +223,47 @@ mod test {
     }
 
     #[test]
+    fn test_deposit_mainnet_no_withdrawal() {
+        let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let pk = PublicKey::from_str(&"0x8478fed8676e9e5d0376c2da97a9e2d67ff5aa11b312aca7856b29f595fcf2c5909c8bafce82f46d9888cd18f780e302").unwrap();
+        let (deposit_data, _) = keystore_to_deposit(
+            keystore,
+            PASSWORD,
+            None,
+            Some(pk),
+            32_000_000_000,
+            "mainnet".to_string(),
+            None,
+        )
+        .unwrap();
+
+        println!("{:?}", deposit_data);
+
+        // Signature asserted here is generated with
+        // python ./staking_deposit/deposit.py existing-mnemonic --keystore_password test
+
+        // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
+        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
+        // Please choose how many new validators you wish to run: 1
+        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
+        assert_eq!(
+            "00e078f11bc1454244bdf9f63a3b997815f081dd6630204186d4c9627a2942f7",
+            hex::encode(deposit_data.withdrawal_credentials)
+        );
+        assert_eq!(
+            "8fb5a76232cb613c30e02b5946d252d0cc5ed8cfa81b7a1f781dc4f228c5e89e77b5b745fba4371be8ea7f02f6b7e18e0e3661b04a63d51197bd43b9dea27fef97b8e2b94ffc989fc29484537bfed9f99b6bc57b45c2004dd23e1502006640d4",
+            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+        );
+    }
+
+    #[test]
     fn test_deposit_goerli() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
         let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
-            WITHDRAWAL_CREDENTIALS_ETH2,
+            Some(WITHDRAWAL_CREDENTIALS_ETH2),
+            None,
             32_000_000_000,
             "goerli".to_string(),
             None,
@@ -231,7 +291,8 @@ mod test {
         let (deposit_data, _) = keystore_to_deposit(
             keystore,
             PASSWORD,
-            WITHDRAWAL_CREDENTIALS_ETH2,
+            Some(WITHDRAWAL_CREDENTIALS_ETH2),
+            None,
             32_000_000_000,
             "minimal".to_string(),
             Some(manifest.to_str().unwrap().to_string()),

@@ -51,8 +51,7 @@ To avoid heavy lifting, we're interfacing [Lighthouse account manager](https://g
 | Account   | public/private keypair that points to your funds        |
 | keystore file   | encrypted version of your private key in JSON funds        |
 | mnemonic phrase / seed phrase / seed words   | 12 or 24 word phrase to access infinite number of accounts, used to derive multiple private keys        |
-| seed   | input given to derive a private key (should be truly random!)        |
-| wallet password   |        |
+| seed   | secret value used to derive HD wallet addresses from a mnemonic phrase (BIP39 standard)       |
 | decryption key   |    used to encrypt/decrypt keystore file    |
 
 # Getting involved
