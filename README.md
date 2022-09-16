@@ -64,7 +64,7 @@ To avoid heavy lifting, we're interfacing [Lighthouse account manager](https://g
 - [X] create basic cli interface to cater for our use case
 
 ## Upcoming 
-- [ ] extend cli interface to add new-mnemonic command
+- [x] extend cli interface to add new-mnemonic command
 - [ ] add negative test cases
 - [ ] add e2e tests 
 - [ ] (for funnsies) progress bar
