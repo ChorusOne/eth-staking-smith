@@ -1,4 +1,16 @@
 use bip39::{Language, Mnemonic, MnemonicType, Seed as Bip39Seed};
+use rand::{rngs::OsRng, RngCore};
+
+fn create_new_seed() -> Mnemonic {
+    let mut bytes = vec![0u8; MnemonicType::Words24.entropy_bits() / 8];
+
+    OsRng
+        .try_fill_bytes(&mut bytes)
+        .expect("Failed to fill bytes from random generator");
+
+    Mnemonic::from_entropy(bytes.as_slice(), Language::English)
+        .expect("Failed to generate mnemonic")
+}
 
 pub(crate) fn get_eth2_seed(existing_mnemonic: Option<&[u8]>) -> (Bip39Seed, String) {
     let mnemonic = match existing_mnemonic {
@@ -7,7 +19,7 @@ pub(crate) fn get_eth2_seed(existing_mnemonic: Option<&[u8]>) -> (Bip39Seed, Str
             Mnemonic::from_phrase(phrase.as_str(), Language::English)
                 .expect("Invalid phrase passed")
         }
-        None => Mnemonic::new(MnemonicType::Words24, Language::English),
+        None => create_new_seed(),
     };
     (Bip39Seed::new(&mnemonic, ""), mnemonic.into_phrase())
 }
