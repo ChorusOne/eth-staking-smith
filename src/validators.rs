@@ -1,15 +1,14 @@
 use crate::deposit::{keystore_to_deposit, DepositError};
-use crate::keystore::{seed_to_keystores, KeyMaterial};
+use crate::key_material::{seed_to_key_material, VotingKeyMaterial};
 use crate::seed::get_eth2_seed;
 use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
 use serde::{Deserialize, Serialize};
 use tree_hash::TreeHash;
 
-pub struct Validators<'a> {
+pub struct Validators {
     mnemonic_phrase: String,
-    key_material: Vec<KeyMaterial>,
-    password: &'a [u8],
+    key_material: Vec<VotingKeyMaterial>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -39,16 +38,16 @@ struct ValidatorExports {
 }
 
 /// Ethereum Merge proof-of-stake validators generator.
-impl<'a> Validators<'a> {
+impl Validators {
     /// Initernal function to initialize key material from seed.
     fn key_material_from_seed(
-        seed: &'a Bip39Seed,
-        password: &'a [u8],
+        seed: &Bip39Seed,
+        password: Option<&[u8]>,
         num_validators: Option<u32>,
         derive_withdrawal: bool,
-    ) -> Vec<KeyMaterial> {
+    ) -> Vec<VotingKeyMaterial> {
         let mut key_material = vec![];
-        for voting_keystore in seed_to_keystores(
+        for voting_keystore in seed_to_key_material(
             seed,
             num_validators.unwrap_or(1),
             password,
@@ -62,7 +61,7 @@ impl<'a> Validators<'a> {
     /// Initialize seed from mnemonic bytes
     pub fn new(
         mnemonic_phrase: Option<&[u8]>,
-        password: &'a [u8],
+        password: Option<&[u8]>,
         num_validators: Option<u32>,
         derive_withdrawal: bool,
     ) -> Self {
@@ -76,14 +75,13 @@ impl<'a> Validators<'a> {
                 num_validators,
                 derive_withdrawal,
             ),
-            password,
         }
     }
 
     /// Initialize seed from mnemonic object
     pub fn from_mnemonic(
-        mnemonic: &'a Mnemonic,
-        password: &'a [u8],
+        mnemonic: &Mnemonic,
+        password: Option<&[u8]>,
         num_validators: Option<u32>,
         derive_withdrawal: bool,
     ) -> Self {
@@ -97,7 +95,6 @@ impl<'a> Validators<'a> {
                 num_validators,
                 derive_withdrawal,
             ),
-            password,
         }
     }
 
@@ -146,8 +143,10 @@ impl<'a> Validators<'a> {
         let mut deposit_data: Vec<DepositExport> = vec![];
 
         for key_with_store in self.key_material.iter() {
-            let keystore = key_with_store.keystore.clone();
-            keystores.push(keystore.clone());
+            if let Some(ks) = key_with_store.keystore.clone() {
+                keystores.push(ks);
+            };
+
             private_keys.push(hex::encode(key_with_store.voting_secret.as_bytes()));
 
             let withdrawal_credentials = if withdrawal_credentials.is_some() {
@@ -155,10 +154,9 @@ impl<'a> Validators<'a> {
             } else {
                 None
             };
-            let public_key = keystore.pubkey().to_string();
+            let public_key = key_with_store.keypair.pk.as_hex_string().replace("0x", "");
             let (deposit, chain_spec) = keystore_to_deposit(
-                keystore.clone(),
-                self.password,
+                &(*key_with_store).clone(),
                 withdrawal_credentials,
                 key_with_store.withdrawal_pk.clone(),
                 deposit_amount_gwei,
@@ -208,8 +206,13 @@ mod test {
 
     #[test]
     fn test_export_validators_existing_mnemonic() {
-        fn validators_with_mnemonic() -> Validators<'static> {
-            Validators::new(Some(PHRASE.as_bytes()), "test".as_bytes(), Some(1), false)
+        fn validators_with_mnemonic() -> Validators {
+            Validators::new(
+                Some(PHRASE.as_bytes()),
+                Some("test".as_bytes()),
+                Some(1),
+                false,
+            )
         }
 
         let exports = vec![
@@ -256,6 +259,7 @@ mod test {
   ]"#;
         // existing-mnemonic is deterministic, therefore both exports should be as expected
         for export in exports {
+            println!("Export: {:?}", export);
             // Asserts are for parts of string, cause keystore has different salt all the time.
             assert!(export.contains(expect_pks));
             assert!(export.contains(expect_mnemonic));
@@ -265,8 +269,8 @@ mod test {
 
     #[test]
     fn test_export_validators_new_mnemonic() {
-        fn validators_new_mnemonic() -> Validators<'static> {
-            Validators::new(None, "test".as_bytes(), Some(1), false)
+        fn validators_new_mnemonic() -> Validators {
+            Validators::new(None, Some("test".as_bytes()), Some(1), false)
         }
 
         let exports: Vec<ValidatorExports> = vec![
@@ -315,7 +319,12 @@ mod test {
 
     #[test]
     fn test_export_validators_no_withdrawal_credentials() {
-        let validators = Validators::new(Some(PHRASE.as_bytes()), "test".as_bytes(), Some(1), true);
+        let validators = Validators::new(
+            Some(PHRASE.as_bytes()),
+            Some("test".as_bytes()),
+            Some(1),
+            true,
+        );
 
         let export = validators
             .export(
