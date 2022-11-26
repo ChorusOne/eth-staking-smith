@@ -6,32 +6,37 @@ use eth2_wallet::{KeyType, ValidatorPath};
 use types::{Keypair, PublicKey};
 
 /// Contains keystore encrypted with password, along with original voting secret.
-#[derive(PartialEq)]
-pub struct KeyMaterial {
-    pub keystore: Keystore,
+#[derive(Clone)]
+pub struct VotingKeyMaterial {
+    pub keystore: Option<Keystore>,
+    pub keypair: Keypair,
     pub voting_secret: PlainText,
     pub withdrawal_pk: Option<PublicKey>,
 }
 
 /// Given eth2 wallet seed, create N key material wrappers,
 /// with voting secret and keystore encrypted with password.
-pub(crate) fn seed_to_keystores(
+pub(crate) fn seed_to_key_material(
     seed: &Bip39Seed,
     n: u32,
-    password: &[u8],
+    password: Option<&[u8]>,
     derive_withdrawal: bool,
-) -> Vec<KeyMaterial> {
+) -> Vec<VotingKeyMaterial> {
     (0..n)
         .map(|idx| {
             let master = DerivedKey::from_seed(seed.as_bytes()).expect("Invalid seed is provided");
             let (voting_path, voting_secret, keypair) =
                 derive_keypair(master, idx, KeyType::Voting);
             let keystore = // Use pbkdf2 crypt because it is faster
-            KeystoreBuilder::new(&keypair, password, format!("{}", voting_path))
-                .expect("Can not create KeystoreBuilder from provided seed")
-                .kdf(pbkdf2())
-                .build()
-                .expect("Failed to build keystore");
+                password.map(
+                    |pass| {
+                        KeystoreBuilder::new(&keypair, pass, format!("{}", voting_path))
+                            .expect("Can not create KeystoreBuilder from provided seed")
+                            .kdf(pbkdf2())
+                            .build()
+                            .expect("Failed to build keystore")
+                    }
+                );
 
             let withdrawal_pk = if derive_withdrawal {
                 let master =
@@ -42,8 +47,9 @@ pub(crate) fn seed_to_keystores(
                 None
             };
 
-            KeyMaterial {
+            VotingKeyMaterial {
                 keystore,
+                keypair,
                 voting_secret,
                 withdrawal_pk,
             }
@@ -67,7 +73,7 @@ fn derive_keypair(
 #[cfg(test)]
 mod test {
 
-    use super::seed_to_keystores;
+    use super::seed_to_key_material;
     use bip39::{Language, Mnemonic, Seed};
     use eth2_wallet::*;
     use pretty_assertions::assert_eq;
@@ -83,7 +89,7 @@ mod test {
     #[test]
     fn test_seed_to_keystore() {
         let seed = seed_from_mnemonic();
-        let keystores = seed_to_keystores(&seed, 2, VOTING_KEYSTORE_PASSWORD, false);
+        let keystores = seed_to_key_material(&seed, 2, Some(VOTING_KEYSTORE_PASSWORD), false);
 
         assert_eq!(keystores.len(), 2);
 
@@ -99,7 +105,7 @@ mod test {
         // Please choose how many new validators you wish to run: 1
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
 
-        assert_eq!(key_material.keystore.pubkey(), "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6");
+        assert_eq!(key_material.clone().keystore.unwrap().pubkey(), "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6");
 
         let secret_key = &key_material.voting_secret;
         assert_eq!(
@@ -111,7 +117,7 @@ mod test {
     #[test]
     fn test_seed_to_keystore_derive_withdrawal_key() {
         let seed = seed_from_mnemonic();
-        let keystores = seed_to_keystores(&seed, 2, VOTING_KEYSTORE_PASSWORD, true);
+        let keystores = seed_to_key_material(&seed, 2, Some(VOTING_KEYSTORE_PASSWORD), true);
 
         assert_eq!(keystores.len(), 2);
 
@@ -127,7 +133,31 @@ mod test {
         // Please choose how many new validators you wish to run: 1
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
 
-        assert_eq!(key_material.keystore.pubkey(), "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6");
+        assert_eq!(key_material.clone().keystore.unwrap().pubkey(), "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6");
+        assert_eq!(key_material.withdrawal_pk.as_ref().unwrap().to_string(), "0x8478fed8676e9e5d0376c2da97a9e2d67ff5aa11b312aca7856b29f595fcf2c5909c8bafce82f46d9888cd18f780e302");
+    }
+
+    #[test]
+    fn test_key_material_no_keystore() {
+        let seed = seed_from_mnemonic();
+        let keystores = seed_to_key_material(&seed, 2, None, true);
+
+        assert_eq!(keystores.len(), 2);
+
+        let key_material = keystores.get(0).unwrap();
+
+        // Keys asserted here are generated with
+        // python ./staking_deposit/deposit.py existing-mnemonic --eth1_withdrawal_address 0x0000000000000000000000000000000000000001 --keystore_password test
+
+        // **[Warning] you are setting an Eth1 address as your withdrawal address. Please ensure that you have control over this address.**
+
+        // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
+        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
+        // Please choose how many new validators you wish to run: 1
+        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
+
+        // Keystore is missing.
+        assert_eq!(None, key_material.keystore);
         assert_eq!(key_material.withdrawal_pk.as_ref().unwrap().to_string(), "0x8478fed8676e9e5d0376c2da97a9e2d67ff5aa11b312aca7856b29f595fcf2c5909c8bafce82f46d9888cd18f780e302");
     }
 }

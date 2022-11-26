@@ -1,10 +1,12 @@
 use crate::utils::*;
-use eth2_keystore::Keystore;
+use eth2_keystore::keypair_from_secret;
 use eth2_network_config::Eth2NetworkConfig;
 use std::path::Path;
 use types::{
     ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, PublicKey, Signature,
 };
+
+use crate::key_material::VotingKeyMaterial;
 
 const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
     48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -24,8 +26,7 @@ pub enum DepositError {
 /// and withdrawal credentials
 /// generate deposit data
 pub(crate) fn keystore_to_deposit(
-    keystore: Keystore,
-    decryption_password: &[u8],
+    key_material: &VotingKeyMaterial,
     // Hex representation of withdrawal credentials
     withdrawal_credentials: Option<&[u8]>,
     // withdrawal public key, needed to generate credentials if not present
@@ -74,8 +75,6 @@ pub(crate) fn keystore_to_deposit(
         ));
     };
 
-    let credentials_hash = Hash256::from_slice(&withdrawal_credentials);
-
     // For simplicity, support only 32Eth deposits
     if deposit_amount_gwei != 32_000_000_000 {
         return Err(DepositError::InvalidDepositAmount(
@@ -115,12 +114,14 @@ pub(crate) fn keystore_to_deposit(
         ));
     }
 
-    let keypair = match keystore.decrypt_keypair(decryption_password) {
+    let credentials_hash = Hash256::from_slice(&withdrawal_credentials);
+
+    let keypair = match keypair_from_secret(key_material.voting_secret.as_bytes()) {
         Ok(kp) => kp,
         Err(e) => {
-            log::debug!("Unable to decrypt keypair to make a deposit: {:?}", e);
+            log::debug!("Invalid voting key material passed: {:?}", e);
             return Err(DepositError::InvalidKeystore(
-                "Invalid keystore or password".to_string(),
+                "Invalid key material or password".to_string(),
             ));
         }
     };
@@ -139,12 +140,13 @@ pub(crate) fn keystore_to_deposit(
 #[cfg(test)]
 mod test {
 
-    use eth2_keystore::Keystore;
+    use eth2_keystore::{Keystore, PlainText};
     use hex;
     use pretty_assertions::assert_eq;
     use types::PublicKey;
 
     use super::keystore_to_deposit;
+    use crate::key_material::VotingKeyMaterial;
     use std::{path::PathBuf, str::FromStr};
     use test_log::test;
 
@@ -158,9 +160,15 @@ mod test {
     #[test]
     fn test_deposit_mainnet_eth1_withdrawal() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair: keypair.clone(),
+            voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
+            withdrawal_pk: None,
+        };
         let (deposit_data, _) = keystore_to_deposit(
-            keystore,
-            PASSWORD,
+            &key_material,
             Some(WITHDRAWAL_CREDENTIALS_ETH1),
             None,
             32_000_000_000,
@@ -192,9 +200,15 @@ mod test {
     #[test]
     fn test_deposit_mainnet_eth2_withdrawal() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair: keypair.clone(),
+            voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
+            withdrawal_pk: None,
+        };
         let (deposit_data, _) = keystore_to_deposit(
-            keystore,
-            PASSWORD,
+            &key_material,
             Some(WITHDRAWAL_CREDENTIALS_ETH2),
             None,
             32_000_000_000,
@@ -225,10 +239,16 @@ mod test {
     #[test]
     fn test_deposit_mainnet_no_withdrawal() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
         let pk = PublicKey::from_str(&"0x8478fed8676e9e5d0376c2da97a9e2d67ff5aa11b312aca7856b29f595fcf2c5909c8bafce82f46d9888cd18f780e302").unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair: keypair.clone(),
+            voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
+            withdrawal_pk: Some(pk.clone()),
+        };
         let (deposit_data, _) = keystore_to_deposit(
-            keystore,
-            PASSWORD,
+            &key_material,
             None,
             Some(pk),
             32_000_000_000,
@@ -259,9 +279,23 @@ mod test {
     #[test]
     fn test_deposit_goerli() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair,
+            voting_secret: PlainText::from(
+                keystore
+                    .decrypt_keypair(PASSWORD)
+                    .unwrap()
+                    .sk
+                    .serialize()
+                    .as_bytes()
+                    .to_vec(),
+            ),
+            withdrawal_pk: None,
+        };
         let (deposit_data, _) = keystore_to_deposit(
-            keystore,
-            PASSWORD,
+            &key_material,
             Some(WITHDRAWAL_CREDENTIALS_ETH2),
             None,
             32_000_000_000,
@@ -286,11 +320,17 @@ mod test {
     #[test]
     fn test_deposit_minimal() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
         let mut manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         manifest.push("tests/resources/testnet.yaml");
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair: keypair.clone(),
+            voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
+            withdrawal_pk: None,
+        };
         let (deposit_data, _) = keystore_to_deposit(
-            keystore,
-            PASSWORD,
+            &key_material,
             Some(WITHDRAWAL_CREDENTIALS_ETH2),
             None,
             32_000_000_000,

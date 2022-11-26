@@ -1,6 +1,6 @@
 pub mod cli;
 pub(crate) mod deposit;
-pub(crate) mod keystore;
+pub(crate) mod key_material;
 pub(crate) mod seed;
 pub(crate) mod utils;
 pub mod validators;

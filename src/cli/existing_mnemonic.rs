@@ -43,7 +43,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .arg(
             Arg::with_name("keystore_password")
                 .long("keystore_password")
-                .required(true)
+                .required(false)
                 .takes_value(true)
                 .help(
                     "The password that will secure your
@@ -84,15 +84,13 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
         .value_of("chain")
         .expect("missing chain identifier");
 
-    let keystore_password = sub_match
-        .value_of("keystore_password")
-        .expect("missing keystore password");
+    let keystore_password = sub_match.value_of("keystore_password");
 
     let withdrawal_address = sub_match.value_of("withdrawal_address");
 
     let validators = Validators::new(
         Some(mnemonic.as_bytes()),
-        keystore_password.as_bytes(),
+        keystore_password.map(|p| p.as_bytes()),
         Some(num_validators),
         withdrawal_address.is_none(),
     );
