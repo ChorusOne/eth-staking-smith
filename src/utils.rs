@@ -1,17 +1,17 @@
 use eth2_hashing::hash;
 use eth2_keystore::json_keystore::{HexBytes, Kdf, Pbkdf2, Prf};
 use eth2_keystore::{DKLEN, SALT_SIZE};
-use rand::Rng;
 use ssz::Encode;
 use types::PublicKey;
 
 pub(crate) fn pbkdf2() -> Kdf {
-    let salt = rand::thread_rng().gen::<[u8; SALT_SIZE]>();
+    let mut salt = vec![0u8; SALT_SIZE];
+    getrandom::getrandom(&mut salt).expect("Failed to generate pbkdf salt using getrandom(2)");
     Kdf::Pbkdf2(Pbkdf2 {
         dklen: DKLEN,
         c: 262_144,
         prf: Prf::HmacSha256,
-        salt: HexBytes::from(salt.to_vec()),
+        salt: HexBytes::from(salt),
     })
 }
 
