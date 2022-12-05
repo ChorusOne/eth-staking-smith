@@ -1,17 +1,9 @@
-use crate::utils::*;
 use eth2_keystore::keypair_from_secret;
 use eth2_network_config::Eth2NetworkConfig;
 use std::path::Path;
-use types::{
-    ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, PublicKey, Signature,
-};
+use types::{ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, Signature};
 
 use crate::key_material::VotingKeyMaterial;
-
-const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
-    48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-];
-const ETH2_CREDENTIALS_PREFIX: &[u8] = &[48, 48];
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DepositError {
@@ -27,47 +19,13 @@ pub enum DepositError {
 /// generate deposit data
 pub(crate) fn keystore_to_deposit(
     key_material: &VotingKeyMaterial,
-    // Hex representation of withdrawal credentials
-    withdrawal_credentials: Option<&[u8]>,
-    // withdrawal public key, needed to generate credentials if not present
-    withdrawal_pk: Option<PublicKey>,
+    // withdrawal credentials
+    withdrawal_credentials: &[u8],
     deposit_amount_gwei: u64,
     network: String,
     chain_spec_file: Option<String>,
 ) -> Result<(DepositData, ChainSpec), DepositError> {
     // Validate data input
-
-    let withdrawal_credentials = match withdrawal_credentials {
-        Some(creds) => {
-            if !creds.starts_with(ETH1_CREDENTIALS_PREFIX)
-                && !creds.starts_with(ETH2_CREDENTIALS_PREFIX)
-            {
-                return Err(DepositError::InvalidWithdrawalCredentials(
-                    "Invalid withdrawal credentials prefix".to_string(),
-                ));
-            };
-
-            hex::decode(creds).unwrap()
-        }
-        None => {
-            // if no withdrawal address passed in, generate credentials from withdrawal public key
-
-            if withdrawal_pk.is_none() {
-                return Err(DepositError::InvalidWithdrawalCredentials(
-                    "Could not retrieve withdrawal public key from key matieral".to_string(),
-                ));
-            }
-
-            let withdrawal = get_withdrawal_credentials(&withdrawal_pk.unwrap(), 0);
-
-            if withdrawal.starts_with(ETH2_CREDENTIALS_PREFIX) {
-                return Err(DepositError::InvalidWithdrawalCredentials(
-                    "Invalid withdrawal credentials prefix".to_string(),
-                ));
-            }
-            withdrawal
-        }
-    };
 
     if withdrawal_credentials.len() != 32 {
         return Err(DepositError::InvalidWithdrawalCredentials(
@@ -114,7 +72,7 @@ pub(crate) fn keystore_to_deposit(
         ));
     }
 
-    let credentials_hash = Hash256::from_slice(&withdrawal_credentials);
+    let credentials_hash = Hash256::from_slice(withdrawal_credentials);
 
     let keypair = match keypair_from_secret(key_material.voting_secret.as_bytes()) {
         Ok(kp) => kp,
@@ -146,7 +104,7 @@ mod test {
     use types::PublicKey;
 
     use super::keystore_to_deposit;
-    use crate::key_material::VotingKeyMaterial;
+    use crate::{key_material::VotingKeyMaterial, utils::get_withdrawal_credentials};
     use std::{path::PathBuf, str::FromStr};
     use test_log::test;
 
@@ -159,6 +117,8 @@ mod test {
 
     #[test]
     fn test_deposit_mainnet_eth1_withdrawal() {
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH1).unwrap();
+
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
         let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
         let key_material = VotingKeyMaterial {
@@ -169,8 +129,7 @@ mod test {
         };
         let (deposit_data, _) = keystore_to_deposit(
             &key_material,
-            Some(WITHDRAWAL_CREDENTIALS_ETH1),
-            None,
+            withdrawal_creds.as_slice(),
             32_000_000_000,
             "mainnet".to_string(),
             None,
@@ -207,10 +166,10 @@ mod test {
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
             withdrawal_pk: None,
         };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
         let (deposit_data, _) = keystore_to_deposit(
             &key_material,
-            Some(WITHDRAWAL_CREDENTIALS_ETH2),
-            None,
+            withdrawal_creds.as_slice(),
             32_000_000_000,
             "mainnet".to_string(),
             None,
@@ -247,10 +206,10 @@ mod test {
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
             withdrawal_pk: Some(pk.clone()),
         };
+        let withdrawal_creds = get_withdrawal_credentials(&pk, 0);
         let (deposit_data, _) = keystore_to_deposit(
             &key_material,
-            None,
-            Some(pk),
+            &withdrawal_creds,
             32_000_000_000,
             "mainnet".to_string(),
             None,
@@ -294,10 +253,10 @@ mod test {
             ),
             withdrawal_pk: None,
         };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
         let (deposit_data, _) = keystore_to_deposit(
             &key_material,
-            Some(WITHDRAWAL_CREDENTIALS_ETH2),
-            None,
+            &withdrawal_creds.as_slice(),
             32_000_000_000,
             "goerli".to_string(),
             None,
@@ -329,10 +288,10 @@ mod test {
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
             withdrawal_pk: None,
         };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
         let (deposit_data, _) = keystore_to_deposit(
             &key_material,
-            Some(WITHDRAWAL_CREDENTIALS_ETH2),
-            None,
+            &withdrawal_creds.as_slice(),
             32_000_000_000,
             "minimal".to_string(),
             Some(manifest.to_str().unwrap().to_string()),

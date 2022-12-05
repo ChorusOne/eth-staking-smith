@@ -1,10 +1,17 @@
 use crate::deposit::{keystore_to_deposit, DepositError};
 use crate::key_material::{seed_to_key_material, VotingKeyMaterial};
 use crate::seed::get_eth2_seed;
+use crate::utils::get_withdrawal_credentials;
 use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tree_hash::TreeHash;
+use types::PublicKey;
+
+const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
+    48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+];
 
 pub struct Validators {
     mnemonic_phrase: String,
@@ -17,24 +24,24 @@ struct MnemonicExport {
 }
 
 #[derive(Serialize, Deserialize)]
-struct DepositExport {
-    pubkey: String,
-    withdrawal_credentials: String,
-    amount: u64,
-    signature: String,
-    deposit_message_root: String,
-    deposit_data_root: String,
-    fork_version: String,
-    network_name: String,
-    deposit_cli_version: String,
+pub struct DepositExport {
+    pub pubkey: String,
+    pub withdrawal_credentials: String,
+    pub amount: u64,
+    pub signature: String,
+    pub deposit_message_root: String,
+    pub deposit_data_root: String,
+    pub fork_version: String,
+    pub network_name: String,
+    pub deposit_cli_version: String,
 }
 
 #[derive(Serialize, Deserialize)]
-struct ValidatorExports {
+pub struct ValidatorExports {
     keystores: Vec<Keystore>,
-    private_keys: Vec<String>,
+    pub private_keys: Vec<String>,
     mnemonic: MnemonicExport,
-    deposit_data: Vec<DepositExport>,
+    pub deposit_data: Vec<DepositExport>,
 }
 
 /// Ethereum Merge proof-of-stake validators generator.
@@ -149,16 +156,15 @@ impl Validators {
 
             private_keys.push(hex::encode(key_with_store.voting_secret.as_bytes()));
 
-            let withdrawal_credentials = if withdrawal_credentials.is_some() {
-                Some(withdrawal_credentials.as_ref().unwrap().as_bytes())
-            } else {
-                None
-            };
+            let withdrawal_credentials = set_withdrawal_credentials(
+                withdrawal_credentials,
+                key_with_store.withdrawal_pk.clone(),
+            )?;
+
             let public_key = key_with_store.keypair.pk.as_hex_string().replace("0x", "");
             let (deposit, chain_spec) = keystore_to_deposit(
                 &(*key_with_store).clone(),
-                withdrawal_credentials,
-                key_with_store.withdrawal_pk.clone(),
+                withdrawal_credentials.as_ref(),
                 deposit_amount_gwei,
                 network.clone(),
                 chain_spec_file.clone(),
@@ -194,13 +200,60 @@ impl Validators {
     }
 }
 
+fn set_withdrawal_credentials(
+    existing_withdrawal_credentials: Option<&str>,
+    derived_withdrawal_credentials: Option<PublicKey>,
+) -> Result<Vec<u8>, DepositError> {
+    let withdrawal_credentials = match existing_withdrawal_credentials {
+        Some(creds) => {
+            let execution_addr_regex: Regex = Regex::new(r"^(0x[a-fA-F0-9]{40})$").unwrap();
+            let execution_creds_regex: Regex =
+                Regex::new(r"^(0x01[0]{22}[a-fA-F0-9]{40})$").unwrap();
+            let bls_creds_regex: Regex = Regex::new(r"^(0x00[a-fA-F0-9]{62})$").unwrap();
+
+            let withdrawal_credentials = if execution_addr_regex.is_match(creds) {
+                // see format of execution address: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#eth1_address_withdrawal_prefix
+                let mut formatted_creds = ETH1_CREDENTIALS_PREFIX.to_vec();
+                formatted_creds.extend_from_slice(&creds.as_bytes()[2..]);
+                formatted_creds
+            } else if execution_creds_regex.is_match(creds) || bls_creds_regex.is_match(creds) {
+                // see format of execution & bls credentials https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#bls_withdrawal_prefix
+                let formatted_creds = creds.as_bytes()[2..].to_vec();
+                formatted_creds
+            } else {
+                return Err(DepositError::InvalidWithdrawalCredentials(
+                    "Invalid withdrawal address: Please pass in a valid execution address, exeuction or BLS credentials with the correct format".to_string(),
+                ));
+            };
+
+            hex::decode(withdrawal_credentials).expect("could not decode hex address ")
+        }
+        None => {
+            let withdrawal_pk = match derived_withdrawal_credentials {
+                Some(pk) => pk,
+                None => {
+                    return Err(DepositError::InvalidWithdrawalCredentials(
+                        "Could not retrieve withdrawal public key from key matieral".to_string(),
+                    ))
+                }
+            };
+
+            get_withdrawal_credentials(&withdrawal_pk, 0)
+        }
+    };
+
+    Ok(withdrawal_credentials)
+}
+
 #[cfg(test)]
 mod test {
 
-    use crate::validators::ValidatorExports;
+    use crate::validators::{set_withdrawal_credentials, ValidatorExports};
 
     use super::Validators;
+    use std::str::FromStr;
     use test_log::test;
+    use types::PublicKey;
 
     const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";
 
@@ -219,7 +272,7 @@ mod test {
             validators_with_mnemonic()
                 .export(
                     "mainnet".to_string(),
-                    Some("0100000000000000000000000000000000000000000000000000000000000001"),
+                    Some("0x0000000000000000000000000000000000000001"),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -228,7 +281,7 @@ mod test {
             validators_with_mnemonic()
                 .export(
                     "mainnet".to_string(),
-                    Some("0100000000000000000000000000000000000000000000000000000000000001"),
+                    Some("0x0000000000000000000000000000000000000001"),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -278,7 +331,7 @@ mod test {
                 &validators_new_mnemonic()
                     .export(
                         "mainnet".to_string(),
-                        Some("0100000000000000000000000000000000000000000000000000000000000001"),
+                        Some("0x0000000000000000000000000000000000000001"),
                         32_000_000_000,
                         "2.3.0".to_string(),
                         None,
@@ -290,7 +343,7 @@ mod test {
                 &validators_new_mnemonic()
                     .export(
                         "mainnet".to_string(),
-                        Some("0100000000000000000000000000000000000000000000000000000000000001"),
+                        Some("0x0000000000000000000000000000000000000001"),
                         32_000_000_000,
                         "2.3.0".to_string(),
                         None,
@@ -353,5 +406,63 @@ mod test {
         println!("export: {}", export);
 
         export.contains(expect_deposit_data);
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_wrong_execution_format() {
+        // should be 0xD4BB555d3B0D7fF17c606161B44E372689C14F4B
+        let response =
+            set_withdrawal_credentials(Some("0x01D4BB555d3B0D7fF17c606161B44E372689C14F4B"), None);
+        assert!(response.is_err());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_valid_execution_address() {
+        let response =
+            set_withdrawal_credentials(Some("0xD4BB555d3B0D7fF17c606161B44E372689C14F4B"), None);
+        assert!(response.is_ok());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_valid_execution_credentials() {
+        let response = set_withdrawal_credentials(
+            Some("0x0100000000000000000000000000000000000000000000000000000000000001"),
+            None,
+        );
+
+        assert!(response.is_ok());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_wrong_bls_format() {
+        // should be 0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d
+        let response = set_withdrawal_credentials(
+            Some("0x45b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d"),
+            None,
+        );
+        assert!(response.is_err());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_valid_bls_format() {
+        let response = set_withdrawal_credentials(
+            Some("0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d"),
+            None,
+        );
+        assert!(response.is_ok());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_error_no_key() {
+        // either withdrawal public key or withdrawal credentials must be provided
+        let response = set_withdrawal_credentials(None, None);
+        assert!(response.is_err());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_from_public_key() {
+        let pk = PublicKey::from_str(&"0x8478fed8676e9e5d0376c2da97a9e2d67ff5aa11b312aca7856b29f595fcf2c5909c8bafce82f46d9888cd18f780e302").unwrap();
+        let response = set_withdrawal_credentials(None, Some(pk));
+        assert!(response.is_ok());
     }
 }

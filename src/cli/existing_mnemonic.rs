@@ -56,16 +56,19 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 ),
         )
         .arg(
-            Arg::with_name("withdrawal_address")
-                .long("withdrawal_address")
+            Arg::with_name("withdrawal_credentials")
+                .long("withdrawal_credentials")
                 .required(false)
                 .takes_value(true)
                 .help(
                     "If this field is set and valid, the given
-                address will be used to create the
+                value will be used to set the
                 withdrawal credentials. Otherwise, it will
                 generate withdrawal credentials with the
-                mnemonic-derived withdrawal public key.",
+                mnemonic-derived withdrawal public key. Valid formats are 
+                ^(0x[a-fA-F0-9]{40})$ for execution addresses, 
+                ^(0x01[0]{22}[a-fA-F0-9]{40})$ for execution withdrawal credentials 
+                and ^(0x00[a-fA-F0-9]{62})$ for BLS withdrawal credentials.",
                 ),
         )
 }
@@ -86,18 +89,18 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
 
     let keystore_password = sub_match.value_of("keystore_password");
 
-    let withdrawal_address = sub_match.value_of("withdrawal_address");
+    let withdrawal_credentials = sub_match.value_of("withdrawal_credentials");
 
     let validators = Validators::new(
         Some(mnemonic.as_bytes()),
         keystore_password.map(|p| p.as_bytes()),
         Some(num_validators),
-        withdrawal_address.is_none(),
+        withdrawal_credentials.is_none(),
     );
     let export = validators
         .export(
             chain.to_string(),
-            withdrawal_address,
+            withdrawal_credentials,
             32_000_000_000,
             "2.3.0".to_string(),
             None,

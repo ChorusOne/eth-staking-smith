@@ -28,7 +28,7 @@ Regenerate key and deposit data with existing mnemonic:
 ### Example command:
 
 ```
-./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password test --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_address "0100000000000000000000000000000000000000000000000000000000000001"
+./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password test --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_credentials "0100000000000000000000000000000000000000000000000000000000000001"
 ```
 
 <!-- 
@@ -42,6 +42,11 @@ required to cater for our use case:
 
 # Implementation Details 
 To avoid heavy lifting, we're interfacing [Lighthouse account manager](https://github.com/sigp/lighthouse/blob/stable/account_manager), but optimizing it in a way so all operations are done in memory and key material is never written to filesystem during the generation to cater for our use case.
+
+# Testing 
+
+## E2E Tests
+To test our code e2e, we've generated files using the [staking deposit cli v2.3.0](https://github.com/ethereum/staking-deposit-cli/releases/tag/v2.3.0) and are comparing the outputs during our tests. This is to guarantee that we're meeting the same criteria. Further error cases are checked in unit tests within the dedicated modules.
 
 # Glossary (WIP)
 
