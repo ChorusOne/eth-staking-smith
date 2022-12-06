@@ -1,1 +1,1 @@
-mod existing_mnemonic;
+mod e2e;

@@ -1,13 +1,14 @@
 use assert_cmd::prelude::*;
-use eth2_keystore::json_keystore::JsonKeystore;
+use eth2_keystore::json_keystore::{Crypto, JsonKeystore};
 use eth_staking_smith::ValidatorExports;
-use serde::{Deserialize, Serialize};
 use std::{
     env,
     path::{Path, PathBuf},
     process::Command,
     str::FromStr,
 };
+
+use crate::e2e::DepositDataJson;
 
 /*
     generate 1 validator (with no withdrawal address specified, i.e. the address is derived from the public key)
@@ -20,26 +21,19 @@ fn test_existing_mnemonic_testcase1() -> Result<(), Box<dyn std::error::Error>> 
     let num_validators = "1";
 
     // test directory
-    let cwd = env::current_dir()?;
-    let test_path = cwd.join(Path::new("tests/resources/expected_testdata/testcase1"));
-    let keystore_path = test_path.join(Path::new("keystore-m_12381_3600_0_0_0-1668613231.json"));
-    let deposit_data_path = test_path.join(Path::new("deposit_data-1668613231.json"));
+    let test_dir = get_test_dir("testcase1");
 
     // read expected files
-    let keystore_file = std::fs::read_to_string(keystore_path)?;
-    let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)?;
-
-    let deposit_data_file = std::fs::read_to_string(deposit_data_path)?;
-    let expected_deposit_data = serde_json::from_str::<Vec<DepositDataJson>>(&deposit_data_file)?;
+    let expected_keystore_json =
+        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1668613231.json");
+    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1668613231.json");
     let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
     // decrypt keystore with expected password to derive private key
-    let expected_private_key_txt = eth2_keystore::decrypt(
-        expected_decryption_password.as_bytes(),
+    let expected_private_key = decrypt_expected_keystore_file(
+        expected_decryption_password,
         &expected_keystore_json.crypto,
-    )
-    .expect("could not decrypt keystore");
-    let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+    );
 
     // run eth-staking-smith
 
@@ -111,26 +105,19 @@ fn test_existing_mnemonic_testcase2() -> Result<(), Box<dyn std::error::Error>> 
     let execution_withdrawal_credentials = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 
     // test directory
-    let cwd = env::current_dir()?;
-    let test_path = cwd.join(Path::new("tests/resources/expected_testdata/testcase2"));
-    let keystore_path = test_path.join(Path::new("keystore-m_12381_3600_0_0_0-1669709160.json"));
-    let deposit_data_path = test_path.join(Path::new("deposit_data-1669709160.json"));
+    let test_dir = get_test_dir("testcase2");
 
     // read expected files
-    let keystore_file = std::fs::read_to_string(keystore_path)?;
-    let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)?;
-
-    let deposit_data_file = std::fs::read_to_string(deposit_data_path)?;
-    let expected_deposit_data = serde_json::from_str::<Vec<DepositDataJson>>(&deposit_data_file)?;
+    let expected_keystore_json =
+        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1669709160.json");
+    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1669709160.json");
     let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
     // decrypt keystore with expected password to derive private key
-    let expected_private_key_txt = eth2_keystore::decrypt(
-        expected_decryption_password.as_bytes(),
+    let expected_private_key = decrypt_expected_keystore_file(
+        expected_decryption_password,
         &expected_keystore_json.crypto,
-    )
-    .expect("could not decrypt keystore");
-    let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+    );
 
     // run eth-staking-smith
 
@@ -205,33 +192,29 @@ fn test_multliple_validators_testcase3() -> Result<(), Box<dyn std::error::Error
     let execution_withdrawal_credentials = "0x0000000000000000000000000000000000000001";
 
     // test directory
-    let cwd = env::current_dir()?;
-    let test_path = cwd.join(Path::new("tests/resources/expected_testdata/testcase3"));
+    let test_dir = get_test_dir("testcase3");
 
     // read expected files
-    let deposit_data_path = test_path.join(Path::new("deposit_data-1670231001.json"));
+    let expected_deposit_data_json =
+        read_deposit_data_json(&test_dir, "deposit_data-1670231001.json");
+
     let mut expected_keystore_jsons = vec![];
     let mut index = 0;
 
-    for entry in std::fs::read_dir(&test_path)? {
+    for entry in std::fs::read_dir(&test_dir)? {
         let filename = entry?
             .file_name()
             .to_str()
             .expect("could not read filename")
             .to_owned();
         if filename.starts_with(&format!("keystore-m_12381_3600_{}", index)) {
-            let keystore_path = test_path.join(PathBuf::from_str(&filename)?);
-            let keystore_file = std::fs::read_to_string(test_path.join(keystore_path))?;
+            let keystore_path = test_dir.join(PathBuf::from_str(&filename)?);
+            let keystore_file = std::fs::read_to_string(test_dir.join(keystore_path))?;
             let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)?;
             expected_keystore_jsons.push(expected_keystore_json);
             index = index + 1;
         }
     }
-
-    let deposit_data =
-        std::fs::read_to_string(deposit_data_path).expect("could not read deposit data file");
-    let expected_deposit_data_json = serde_json::from_str::<Vec<DepositDataJson>>(&deposit_data)
-        .expect("error reading deposit data json");
 
     // run eth-staking-smith
 
@@ -315,30 +298,19 @@ fn test_existing_mnemonic_testcase4() -> Result<(), Box<dyn std::error::Error>> 
         "0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d";
 
     // test directory
-    let cwd = env::current_dir()?;
-    let test_path = cwd.join(Path::new("tests/resources/expected_testdata/testcase1"));
-    let keystore_path = test_path.join(Path::new("keystore-m_12381_3600_0_0_0-1668613231.json"));
-    let deposit_data_path = test_path.join(Path::new("deposit_data-1668613231.json"));
+    let test_dir = get_test_dir("testcase1");
 
     // read expected files
-    let keystore_file =
-        std::fs::read_to_string(keystore_path).expect("could not read keystore file");
     let expected_keystore_json =
-        serde_json::from_str::<JsonKeystore>(&keystore_file).expect("error reading keystore json");
-
-    let deposit_data_file =
-        std::fs::read_to_string(deposit_data_path).expect("could not read deposit data file");
-    let expected_deposit_data = serde_json::from_str::<Vec<DepositDataJson>>(&deposit_data_file)
-        .expect("error reading deposit data json");
+        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1668613231.json");
+    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1668613231.json");
     let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
     // decrypt keystore with expected password to derive private key
-    let expected_private_key_txt = eth2_keystore::decrypt(
-        expected_decryption_password.as_bytes(),
+    let expected_private_key = decrypt_expected_keystore_file(
+        expected_decryption_password,
         &expected_keystore_json.crypto,
-    )
-    .expect("could not decrypt keystore");
-    let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+    );
 
     // run eth-staking-smith
 
@@ -374,7 +346,7 @@ fn test_existing_mnemonic_testcase4() -> Result<(), Box<dyn std::error::Error>> 
     let generated_deposit_data = generated_validator_json
         .deposit_data
         .get(0)
-        .expect("could not get generated private key");
+        .expect("could not get generated deposit key");
 
     // compare private keys
 
@@ -417,26 +389,19 @@ fn test_existing_mnemonic_testcase5() -> Result<(), Box<dyn std::error::Error>> 
         "0x01000000000000000000000071c7656ec7ab88b098defb751b7401b5f6d8976f";
 
     // test directory
-    let cwd = env::current_dir()?;
-    let test_path = cwd.join(Path::new("tests/resources/expected_testdata/testcase2"));
-    let keystore_path = test_path.join(Path::new("keystore-m_12381_3600_0_0_0-1669709160.json"));
-    let deposit_data_path = test_path.join(Path::new("deposit_data-1669709160.json"));
+    let test_dir = get_test_dir("testcase2");
 
     // read expected files
-    let keystore_file = std::fs::read_to_string(keystore_path)?;
-    let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)?;
-
-    let deposit_data_file = std::fs::read_to_string(deposit_data_path)?;
-    let expected_deposit_data = serde_json::from_str::<Vec<DepositDataJson>>(&deposit_data_file)?;
+    let expected_keystore_json =
+        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1669709160.json");
+    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1669709160.json");
     let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
     // decrypt keystore with expected password to derive private key
-    let expected_private_key_txt = eth2_keystore::decrypt(
-        expected_decryption_password.as_bytes(),
+    let expected_private_key = decrypt_expected_keystore_file(
+        expected_decryption_password,
         &expected_keystore_json.crypto,
-    )
-    .expect("could not decrypt keystore");
-    let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+    );
 
     // run eth-staking-smith
 
@@ -500,15 +465,44 @@ fn test_existing_mnemonic_testcase5() -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct DepositDataJson {
-    pubkey: String,
-    withdrawal_credentials: String,
-    amount: u64,
-    signature: String,
-    deposit_message_root: String,
-    deposit_data_root: String,
-    fork_version: String,
-    network_name: String,
-    deposit_cli_version: String,
+fn get_test_dir(testcase: &str) -> PathBuf {
+    let cwd = env::current_dir().expect("could not get current directory");
+    let test_path = cwd.join(Path::new(&format!(
+        "tests/e2e/expected_testdata/{}",
+        testcase
+    )));
+    test_path
+}
+
+fn read_keystore_json(test_path: &PathBuf, keystore_filename: &str) -> JsonKeystore {
+    let keystore_path = test_path.join(Path::new(&keystore_filename));
+    let keystore_file =
+        std::fs::read_to_string(keystore_path).expect("could not read keystore from path");
+    let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)
+        .expect("could not unmarshal keystore json");
+    expected_keystore_json
+}
+
+fn decrypt_expected_keystore_file(
+    expected_decryption_password: &str,
+    expected_keystore_crypto: &Crypto,
+) -> String {
+    let expected_private_key_txt = eth2_keystore::decrypt(
+        expected_decryption_password.as_bytes(),
+        &expected_keystore_crypto,
+    )
+    .expect("could not decrypt keystore");
+    let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+    expected_private_key
+}
+
+fn read_deposit_data_json(
+    test_path: &PathBuf,
+    deposit_data_filename: &str,
+) -> Vec<DepositDataJson> {
+    let deposit_data_path = test_path.join(Path::new(deposit_data_filename));
+    let deposit_data_file =
+        std::fs::read_to_string(deposit_data_path).expect("could not read deposit data");
+    serde_json::from_str::<Vec<DepositDataJson>>(&deposit_data_file)
+        .expect("could not unmarshal deposit data json")
 }

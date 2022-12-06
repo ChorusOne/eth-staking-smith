@@ -1,17 +1,24 @@
+use std::str::FromStr;
+
 use crate::deposit::{keystore_to_deposit, DepositError};
 use crate::key_material::{seed_to_key_material, VotingKeyMaterial};
 use crate::seed::get_eth2_seed;
 use crate::utils::get_withdrawal_credentials;
 use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
+use eth2_network_config::Eth2NetworkConfig;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tree_hash::TreeHash;
-use types::PublicKey;
+use types::{
+    DepositData, Hash256, MainnetEthSpec, PublicKey, PublicKeyBytes, Signature, SignatureBytes,
+    SignedRoot,
+};
 
 const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
     48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
 ];
+const ETH2_CREDENTIALS_PREFIX: &[u8] = &[48, 48];
 
 pub struct Validators {
     mnemonic_phrase: String,
@@ -23,7 +30,7 @@ struct MnemonicExport {
     seed: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DepositExport {
     pub pubkey: String,
     pub withdrawal_credentials: String,
@@ -36,9 +43,74 @@ pub struct DepositExport {
     pub deposit_cli_version: String,
 }
 
+impl DepositExport {
+    /*
+        Checks whether a deposit is valid based on the staking deposit rules.
+        https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#deposits
+    */
+    pub fn validate(self) {
+        let pub_key = &self.pubkey;
+        assert_eq!(96, pub_key.len());
+
+        let withdrawal_credentials = &self.withdrawal_credentials;
+        assert_eq!(64, withdrawal_credentials.len());
+
+        if !withdrawal_credentials
+            .as_bytes()
+            .starts_with(ETH1_CREDENTIALS_PREFIX)
+            && !withdrawal_credentials
+                .as_bytes()
+                .starts_with(ETH2_CREDENTIALS_PREFIX)
+        {
+            panic!("withdrawal address has unexpected prefix");
+        }
+
+        assert_eq!(32000000000, self.amount);
+
+        let pubkey =
+            PublicKey::from_str(&format!("0x{}", pub_key)).expect("could not parse public key");
+        let pubkey_bytes = PublicKeyBytes::from_str(&format!("0x{}", pub_key))
+            .expect("could not parse public key");
+        let withdrawal_credentials = Hash256::from_str(withdrawal_credentials)
+            .expect("could not parse withdrawal credentials");
+        let signature = Signature::from_str(&format!("0x{}", self.signature))
+            .expect("could not parse signature");
+        let signature_bytes = SignatureBytes::from_str(&format!("0x{}", self.signature))
+            .expect("could not parse signature");
+        let deposit_data_root = Hash256::from_str(&self.deposit_data_root)
+            .expect("could not parse deposit message root");
+
+        let deposit_data = DepositData {
+            pubkey: pubkey_bytes,
+            withdrawal_credentials,
+            amount: self.amount,
+            signature: signature_bytes,
+        };
+
+        let fork_version: [u8; 4] = self.fork_version.as_bytes()[4..8]
+            .try_into()
+            .expect("could not wrap fork version");
+        assert_eq!(vec![49, 48, 50, 48], fork_version); // should be 1020
+
+        let spec = Eth2NetworkConfig::constant(&self.network_name)
+            .unwrap()
+            .unwrap()
+            .chain_spec::<MainnetEthSpec>()
+            .unwrap();
+
+        let domain = spec.get_deposit_domain();
+        let signing_root = deposit_data.as_deposit_message().signing_root(domain);
+
+        let is_valid = signature.verify(&pubkey, signing_root);
+        assert!(is_valid);
+
+        assert_eq!(deposit_data_root, deposit_data.tree_hash_root());
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ValidatorExports {
-    keystores: Vec<Keystore>,
+    pub keystores: Vec<Keystore>,
     pub private_keys: Vec<String>,
     mnemonic: MnemonicExport,
     pub deposit_data: Vec<DepositExport>,
