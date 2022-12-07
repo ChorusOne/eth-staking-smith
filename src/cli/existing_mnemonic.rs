@@ -104,7 +104,7 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
         )
         .unwrap()
         .try_into()
-        .expect("could not deserialise validator export");
+        .expect("could not serialise validator export");
     let export_json =
         serde_json::to_string_pretty(&export).expect("could not parse validator export");
     println!("{}", export_json);
