@@ -12,6 +12,7 @@ pub enum DepositError {
     InvalidKeystore(String),
     InvalidNetworkName(String),
     NoCustomConfig(String),
+    SerializationError(String),
 }
 
 /// Given the network specification, validator keystore

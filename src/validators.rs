@@ -30,7 +30,7 @@ struct MnemonicExport {
     seed: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
 pub struct DepositExport {
     pub pubkey: String,
     pub withdrawal_credentials: String,
@@ -114,6 +114,16 @@ pub struct ValidatorExports {
     pub private_keys: Vec<String>,
     mnemonic: MnemonicExport,
     pub deposit_data: Vec<DepositExport>,
+}
+
+impl TryInto<serde_json::Value> for ValidatorExports {
+    type Error = DepositError;
+
+    fn try_into(self) -> Result<serde_json::Value, Self::Error> {
+        serde_json::to_value(&self).map_err(|_| {
+            DepositError::SerializationError("Failed to serialize validators export".to_string())
+        })
+    }
 }
 
 /// Ethereum Merge proof-of-stake validators generator.
@@ -216,7 +226,7 @@ impl Validators {
         deposit_amount_gwei: u64,
         deposit_cli_version: String,
         chain_spec_file: Option<String>,
-    ) -> Result<String, DepositError> {
+    ) -> Result<ValidatorExports, DepositError> {
         let mut keystores: Vec<Keystore> = vec![];
         let mut private_keys: Vec<String> = vec![];
         let mut deposit_data: Vec<DepositExport> = vec![];
@@ -268,7 +278,7 @@ impl Validators {
             },
             deposit_data,
         };
-        Ok(serde_json::to_string_pretty(&exports).expect("Failed to serialize validators export"))
+        Ok(exports)
     }
 }
 
@@ -320,7 +330,10 @@ fn set_withdrawal_credentials(
 #[cfg(test)]
 mod test {
 
-    use crate::validators::{set_withdrawal_credentials, ValidatorExports};
+    use crate::{
+        validators::{set_withdrawal_credentials, ValidatorExports},
+        DepositExport,
+    };
 
     use super::Validators;
     use std::str::FromStr;
@@ -361,34 +374,28 @@ mod test {
                 .unwrap(),
         ];
 
-        let expect_pks = r#""private_keys": [
-    "3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c"
-  ],"#;
-
-        let expect_mnemonic = r#""mnemonic": {
-    "seed": "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup"
-  },"#;
-
-        let expect_deposit_data = r#""deposit_data": [
+        let exp_deposit_data: Vec<DepositExport> = serde_json::from_str(r#"[
     {
-      "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
-      "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001",
-      "amount": 32000000000,
-      "signature": "a1f3ece1cb871e1af29fdaf94cab58d48d128d0ed2342a1f042f49344943c25ec6eab4f2219301e421a88453c6aa29e90b78373a8341c17738bc0ff4d0a724494535b494cd21fd2633a7a12353a5232c9806e1576f1e2447631ec3310db4008b",
-      "deposit_message_root": "dc224ac1c94d70906d643644f20398bdea5dabea123116a9d6135b8f5f4906bd",
-      "deposit_data_root": "f5c6b52d2ba608f0df4123e5ed051b5765a636e09d1372668e1ec074430f2279",
-      "fork_version": "00000000",
-      "network_name": "mainnet",
-      "deposit_cli_version": "2.3.0"
+        "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+        "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001",
+        "amount": 32000000000,
+        "signature": "a1f3ece1cb871e1af29fdaf94cab58d48d128d0ed2342a1f042f49344943c25ec6eab4f2219301e421a88453c6aa29e90b78373a8341c17738bc0ff4d0a724494535b494cd21fd2633a7a12353a5232c9806e1576f1e2447631ec3310db4008b",
+        "deposit_message_root": "dc224ac1c94d70906d643644f20398bdea5dabea123116a9d6135b8f5f4906bd",
+        "deposit_data_root": "f5c6b52d2ba608f0df4123e5ed051b5765a636e09d1372668e1ec074430f2279",
+        "fork_version": "00000000",
+        "network_name": "mainnet",
+        "deposit_cli_version": "2.3.0"
     }
-  ]"#;
+  ]"#).unwrap();
+
         // existing-mnemonic is deterministic, therefore both exports should be as expected
         for export in exports {
-            println!("Export: {:?}", export);
-            // Asserts are for parts of string, cause keystore has different salt all the time.
-            assert!(export.contains(expect_pks));
-            assert!(export.contains(expect_mnemonic));
-            assert!(export.contains(expect_deposit_data));
+            assert_eq!(
+                "3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c",
+                export.private_keys[0]
+            );
+            assert_eq!("entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup", export.mnemonic.seed);
+            assert_eq!(exp_deposit_data, export.deposit_data);
         }
     }
 
@@ -399,30 +406,24 @@ mod test {
         }
 
         let exports: Vec<ValidatorExports> = vec![
-            serde_json::from_str(
-                &validators_new_mnemonic()
-                    .export(
-                        "mainnet".to_string(),
-                        Some("0x0000000000000000000000000000000000000001"),
-                        32_000_000_000,
-                        "2.3.0".to_string(),
-                        None,
-                    )
-                    .unwrap(),
-            )
-            .unwrap(),
-            serde_json::from_str(
-                &validators_new_mnemonic()
-                    .export(
-                        "mainnet".to_string(),
-                        Some("0x0000000000000000000000000000000000000001"),
-                        32_000_000_000,
-                        "2.3.0".to_string(),
-                        None,
-                    )
-                    .unwrap(),
-            )
-            .unwrap(),
+            validators_new_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
+            validators_new_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
         ];
 
         for export in exports.iter() {
@@ -461,7 +462,7 @@ mod test {
             )
             .unwrap();
 
-        let expect_deposit_data = r#""deposit_data": [
+        let exp_deposit_data: Vec<DepositExport> = serde_json::from_str(r#"[
     {
       "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
       "withdrawal_credentials": "00e078f11bc1454244bdf9f63a3b997815f081dd6630204186d4c9627a2942f7",
@@ -473,11 +474,9 @@ mod test {
       "network_name": "mainnet",
       "deposit_cli_version": "2.3.0"
     }
-  ]"#;
+  ]"#).unwrap();
 
-        println!("export: {}", export);
-
-        export.contains(expect_deposit_data);
+        assert_eq!(exp_deposit_data, export.deposit_data);
     }
 
     #[test]

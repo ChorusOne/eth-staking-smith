@@ -94,7 +94,7 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
         Some(num_validators),
         withdrawal_credentials.is_none(),
     );
-    let export = validators
+    let export: serde_json::Value = validators
         .export(
             chain.to_string(),
             withdrawal_credentials,
@@ -102,6 +102,10 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
             "2.3.0".to_string(),
             None,
         )
-        .unwrap();
-    println!("{}", export);
+        .unwrap()
+        .try_into()
+        .expect("could not deserialise validator export");
+    let export_json =
+        serde_json::to_string_pretty(&export).expect("could not parse validator export");
+    println!("{}", export_json);
 }
