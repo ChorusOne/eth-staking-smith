@@ -294,7 +294,7 @@ fn set_withdrawal_credentials(
                 formatted_creds
             } else {
                 return Err(DepositError::InvalidWithdrawalCredentials(
-                    "Invalid withdrawal address: Please pass in a valid execution address, exeuction or BLS credentials with the correct format".to_string(),
+                    "Invalid withdrawal address: Please pass in a valid execution address, execution or BLS credentials with the correct format".to_string(),
                 ));
             };
 
@@ -334,7 +334,7 @@ mod test {
         fn validators_with_mnemonic() -> Validators {
             Validators::new(
                 Some(PHRASE.as_bytes()),
-                Some("test".as_bytes()),
+                Some("testtest".as_bytes()),
                 Some(1),
                 false,
             )
@@ -395,7 +395,7 @@ mod test {
     #[test]
     fn test_export_validators_new_mnemonic() {
         fn validators_new_mnemonic() -> Validators {
-            Validators::new(None, Some("test".as_bytes()), Some(1), false)
+            Validators::new(None, Some("testtest".as_bytes()), Some(1), false)
         }
 
         let exports: Vec<ValidatorExports> = vec![
@@ -446,7 +446,7 @@ mod test {
     fn test_export_validators_no_withdrawal_credentials() {
         let validators = Validators::new(
             Some(PHRASE.as_bytes()),
-            Some("test".as_bytes()),
+            Some("testtest".as_bytes()),
             Some(1),
             true,
         );

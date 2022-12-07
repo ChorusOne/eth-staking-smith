@@ -1,12 +1,13 @@
 use assert_cmd::prelude::*;
 use eth2_keystore::Keystore;
 use eth_staking_smith::ValidatorExports;
+use predicates::prelude::*;
 use std::process::Command;
 /*
     generate 1 validator with new mnemonic (with no withdrawal address specified, i.e. the address is derived from the public key)
 */
 #[test]
-fn test_new_mnemonic_testcase1() -> Result<(), Box<dyn std::error::Error>> {
+fn test_withdrawal_credentials_derived() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let decryption_password = "testtest";
     let num_validators = "1";
@@ -57,10 +58,10 @@ fn test_new_mnemonic_testcase1() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /*
-    generate 1 validator overwriting withdrawal credentials with eth1 address
+    generate 1 validator overwriting withdrawal credentials with exeuction address
 */
 #[test]
-fn test_new_mnemonic_testcase2() -> Result<(), Box<dyn std::error::Error>> {
+fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let decryption_password = "testtest";
     let num_validators = "1";
@@ -117,7 +118,7 @@ fn test_new_mnemonic_testcase2() -> Result<(), Box<dyn std::error::Error>> {
     generate 3 validators
 */
 #[test]
-fn test_new_mnemonic_multiple_validators_testcase3() -> Result<(), Box<dyn std::error::Error>> {
+fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let decryption_password = "testtest";
     let num_validators = "3";
@@ -176,10 +177,10 @@ fn test_new_mnemonic_multiple_validators_testcase3() -> Result<(), Box<dyn std::
 }
 
 /*
-    generate 1 validator by passing in an existing bls credentials (to ensure correctness, we'll use the validator from testcase 1)
+    generate 1 validator by passing in an existing bls credentials
 */
 #[test]
-fn test_new_mnemonic_testcase4() -> Result<(), Box<dyn std::error::Error>> {
+fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let decryption_password = "testtest";
     let num_validators = "3";
@@ -233,10 +234,10 @@ fn test_new_mnemonic_testcase4() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /*
-    generate 1 validator overwriting withdrawal credentials with eth1 credentials (to ensure correctness, we'll use the validator from testcase 2)
+    generate 1 validator overwriting withdrawal credentials with execution credentials
 */
 #[test]
-fn test_new_mnemonic_testcase5() -> Result<(), Box<dyn std::error::Error>> {
+fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let decryption_password = "testtest";
     let num_validators = "3";
@@ -275,7 +276,7 @@ fn test_new_mnemonic_testcase5() -> Result<(), Box<dyn std::error::Error>> {
     let generated_deposit_data = generated_validator_json
         .deposit_data
         .get(0)
-        .expect("could not get generated private key")
+        .expect("could not get generated deposit data")
         .to_owned();
 
     generated_deposit_data.validate();
@@ -286,6 +287,94 @@ fn test_new_mnemonic_testcase5() -> Result<(), Box<dyn std::error::Error>> {
         decryption_password,
     );
     assert_eq!(generated_private_key, &encoded_private_key);
+
+    Ok(())
+}
+
+/*
+    omitting keystore password argument will not generate keystore files
+*/
+#[test]
+fn test_omitting_keystore_password() -> Result<(), Box<dyn std::error::Error>> {
+    let chain = "goerli";
+    let num_validators = "1";
+    let execution_withdrawal_credentials =
+        "0x01000000000000000000000071c7656ec7ab88b098defb751b7401b5f6d8976f";
+
+    // run eth-staking-smith
+
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("new-mnemonic");
+    cmd.arg("--chain");
+    cmd.arg(chain);
+    cmd.arg("--num_validators");
+    cmd.arg(num_validators);
+    cmd.arg("--withdrawal_credentials");
+    cmd.arg(execution_withdrawal_credentials);
+
+    cmd.assert().success();
+
+    // read generated output
+
+    let output = &cmd.output()?.stdout;
+    let command_output = std::str::from_utf8(output)?;
+    let generated_validator_json: ValidatorExports =
+        serde_json::from_str(command_output).expect("could not unmarshal command output");
+
+    assert!(generated_validator_json.keystores.is_empty());
+
+    Ok(())
+}
+
+/*
+    attempt to generate validator with non-supported network
+*/
+#[test]
+fn test_error_nonsupported_network() -> Result<(), Box<dyn std::error::Error>> {
+    let nonsupported_network = "goerliX";
+    let expected_decryption_password = "testtest";
+    let num_validators = "1";
+
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("new-mnemonic");
+    cmd.arg("--chain");
+    cmd.arg(nonsupported_network);
+    cmd.arg("--keystore_password");
+    cmd.arg(expected_decryption_password);
+    cmd.arg("--num_validators");
+    cmd.arg(num_validators);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Unknown network name passed"));
+
+    Ok(())
+}
+
+/*
+    attempt to generate validator with decription too short
+*/
+#[test]
+fn test_error_password_too_short() -> Result<(), Box<dyn std::error::Error>> {
+    let chain = "goerli";
+    let decryption_password_too_short = "t";
+    let num_validators = "1";
+
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("new-mnemonic");
+    cmd.arg("--chain");
+    cmd.arg(chain);
+    cmd.arg("--keystore_password");
+    cmd.arg(decryption_password_too_short);
+    cmd.arg("--num_validators");
+    cmd.arg(num_validators);
+
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "The password length should be at least 8",
+    ));
 
     Ok(())
 }

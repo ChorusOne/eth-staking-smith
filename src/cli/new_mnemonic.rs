@@ -33,13 +33,10 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .required(false)
                 .takes_value(true)
                 .help(
-                    "The password that will secure your
+                    "The password that will encrypt your
                 keystores. You will need to re-enter this to
                 decrypt them when you setup your Ethereum
-                validators. (It is recommended not to use
-                this argument, and wait for the CLI to ask
-                you for your mnemonic as otherwise it will
-                appear in your shell history.)",
+                validators. If omitted, keystores will not be generated.",
                 ),
         )
         .arg(
