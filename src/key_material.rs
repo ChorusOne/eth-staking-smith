@@ -30,6 +30,7 @@ pub(crate) fn seed_to_key_material(
             let keystore = // Use pbkdf2 crypt because it is faster
                 password.map(
                     |pass| {
+                        if pass.len() < 8 { panic!("The password length should be at least 8"); }
                         KeystoreBuilder::new(&keypair, pass, format!("{}", voting_path))
                             .expect("Can not create KeystoreBuilder from provided seed")
                             .kdf(pbkdf2())

@@ -49,23 +49,23 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                     "The password that will secure your
                 keystores. You will need to re-enter this to
                 decrypt them when you setup your Ethereum
-                validators. (It is recommended not to use
-                this argument, and wait for the CLI to ask
-                you for your mnemonic as otherwise it will
-                appear in your shell history.)",
+                validators. If omitted, keystores will not be generated.",
                 ),
         )
         .arg(
-            Arg::with_name("withdrawal_address")
-                .long("withdrawal_address")
+            Arg::with_name("withdrawal_credentials")
+                .long("withdrawal_credentials")
                 .required(false)
                 .takes_value(true)
                 .help(
                     "If this field is set and valid, the given
-                address will be used to create the
+                value will be used to set the
                 withdrawal credentials. Otherwise, it will
                 generate withdrawal credentials with the
-                mnemonic-derived withdrawal public key.",
+                mnemonic-derived withdrawal public key. Valid formats are 
+                ^(0x[a-fA-F0-9]{40})$ for execution addresses, 
+                ^(0x01[0]{22}[a-fA-F0-9]{40})$ for execution withdrawal credentials 
+                and ^(0x00[a-fA-F0-9]{62})$ for BLS withdrawal credentials.",
                 ),
         )
 }
@@ -86,22 +86,26 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
 
     let keystore_password = sub_match.value_of("keystore_password");
 
-    let withdrawal_address = sub_match.value_of("withdrawal_address");
+    let withdrawal_credentials = sub_match.value_of("withdrawal_credentials");
 
     let validators = Validators::new(
         Some(mnemonic.as_bytes()),
         keystore_password.map(|p| p.as_bytes()),
         Some(num_validators),
-        withdrawal_address.is_none(),
+        withdrawal_credentials.is_none(),
     );
-    let export = validators
+    let export: serde_json::Value = validators
         .export(
             chain.to_string(),
-            withdrawal_address,
+            withdrawal_credentials,
             32_000_000_000,
             "2.3.0".to_string(),
             None,
         )
-        .unwrap();
-    println!("{}", export);
+        .unwrap()
+        .try_into()
+        .expect("could not serialise validator export");
+    let export_json =
+        serde_json::to_string_pretty(&export).expect("could not parse validator export");
+    println!("{}", export_json);
 }

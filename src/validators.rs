@@ -1,10 +1,24 @@
+use std::str::FromStr;
+
 use crate::deposit::{keystore_to_deposit, DepositError};
 use crate::key_material::{seed_to_key_material, VotingKeyMaterial};
 use crate::seed::get_eth2_seed;
+use crate::utils::get_withdrawal_credentials;
 use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
+use eth2_network_config::Eth2NetworkConfig;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tree_hash::TreeHash;
+use types::{
+    DepositData, Hash256, MainnetEthSpec, PublicKey, PublicKeyBytes, Signature, SignatureBytes,
+    SignedRoot,
+};
+
+const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
+    48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+];
+const ETH2_CREDENTIALS_PREFIX: &[u8] = &[48, 48];
 
 pub struct Validators {
     mnemonic_phrase: String,
@@ -16,25 +30,100 @@ struct MnemonicExport {
     seed: String,
 }
 
-#[derive(Serialize, Deserialize)]
-struct DepositExport {
-    pubkey: String,
-    withdrawal_credentials: String,
-    amount: u64,
-    signature: String,
-    deposit_message_root: String,
-    deposit_data_root: String,
-    fork_version: String,
-    network_name: String,
-    deposit_cli_version: String,
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
+pub struct DepositExport {
+    pub pubkey: String,
+    pub withdrawal_credentials: String,
+    pub amount: u64,
+    pub signature: String,
+    pub deposit_message_root: String,
+    pub deposit_data_root: String,
+    pub fork_version: String,
+    pub network_name: String,
+    pub deposit_cli_version: String,
+}
+
+impl DepositExport {
+    /*
+        Checks whether a deposit is valid based on the staking deposit rules.
+        https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#deposits
+    */
+    pub fn validate(self) {
+        let pub_key = &self.pubkey;
+        assert_eq!(96, pub_key.len());
+
+        let withdrawal_credentials = &self.withdrawal_credentials;
+        assert_eq!(64, withdrawal_credentials.len());
+
+        if !withdrawal_credentials
+            .as_bytes()
+            .starts_with(ETH1_CREDENTIALS_PREFIX)
+            && !withdrawal_credentials
+                .as_bytes()
+                .starts_with(ETH2_CREDENTIALS_PREFIX)
+        {
+            panic!("withdrawal address has unexpected prefix");
+        }
+
+        assert_eq!(32000000000, self.amount);
+
+        let pubkey =
+            PublicKey::from_str(&format!("0x{}", pub_key)).expect("could not parse public key");
+        let pubkey_bytes = PublicKeyBytes::from_str(&format!("0x{}", pub_key))
+            .expect("could not parse public key");
+        let withdrawal_credentials = Hash256::from_str(withdrawal_credentials)
+            .expect("could not parse withdrawal credentials");
+        let signature = Signature::from_str(&format!("0x{}", self.signature))
+            .expect("could not parse signature");
+        let signature_bytes = SignatureBytes::from_str(&format!("0x{}", self.signature))
+            .expect("could not parse signature");
+        let deposit_data_root = Hash256::from_str(&self.deposit_data_root)
+            .expect("could not parse deposit message root");
+
+        let deposit_data = DepositData {
+            pubkey: pubkey_bytes,
+            withdrawal_credentials,
+            amount: self.amount,
+            signature: signature_bytes,
+        };
+
+        let fork_version: [u8; 4] = self.fork_version.as_bytes()[4..8]
+            .try_into()
+            .expect("could not wrap fork version");
+        assert_eq!(vec![49, 48, 50, 48], fork_version); // should be 1020
+
+        let spec = Eth2NetworkConfig::constant(&self.network_name)
+            .unwrap()
+            .unwrap()
+            .chain_spec::<MainnetEthSpec>()
+            .unwrap();
+
+        let domain = spec.get_deposit_domain();
+        let signing_root = deposit_data.as_deposit_message().signing_root(domain);
+
+        let is_valid = signature.verify(&pubkey, signing_root);
+        assert!(is_valid);
+
+        assert_eq!(deposit_data_root, deposit_data.tree_hash_root());
+    }
 }
 
 #[derive(Serialize, Deserialize)]
-struct ValidatorExports {
-    keystores: Vec<Keystore>,
-    private_keys: Vec<String>,
+pub struct ValidatorExports {
+    pub keystores: Vec<Keystore>,
+    pub private_keys: Vec<String>,
     mnemonic: MnemonicExport,
-    deposit_data: Vec<DepositExport>,
+    pub deposit_data: Vec<DepositExport>,
+}
+
+impl TryInto<serde_json::Value> for ValidatorExports {
+    type Error = DepositError;
+
+    fn try_into(self) -> Result<serde_json::Value, Self::Error> {
+        serde_json::to_value(&self).map_err(|_| {
+            DepositError::SerializationError("Failed to serialize validators export".to_string())
+        })
+    }
 }
 
 /// Ethereum Merge proof-of-stake validators generator.
@@ -137,7 +226,7 @@ impl Validators {
         deposit_amount_gwei: u64,
         deposit_cli_version: String,
         chain_spec_file: Option<String>,
-    ) -> Result<String, DepositError> {
+    ) -> Result<ValidatorExports, DepositError> {
         let mut keystores: Vec<Keystore> = vec![];
         let mut private_keys: Vec<String> = vec![];
         let mut deposit_data: Vec<DepositExport> = vec![];
@@ -149,16 +238,15 @@ impl Validators {
 
             private_keys.push(hex::encode(key_with_store.voting_secret.as_bytes()));
 
-            let withdrawal_credentials = if withdrawal_credentials.is_some() {
-                Some(withdrawal_credentials.as_ref().unwrap().as_bytes())
-            } else {
-                None
-            };
+            let withdrawal_credentials = set_withdrawal_credentials(
+                withdrawal_credentials,
+                key_with_store.withdrawal_pk.clone(),
+            )?;
+
             let public_key = key_with_store.keypair.pk.as_hex_string().replace("0x", "");
             let (deposit, chain_spec) = keystore_to_deposit(
                 &(*key_with_store).clone(),
-                withdrawal_credentials,
-                key_with_store.withdrawal_pk.clone(),
+                withdrawal_credentials.as_ref(),
                 deposit_amount_gwei,
                 network.clone(),
                 chain_spec_file.clone(),
@@ -190,17 +278,67 @@ impl Validators {
             },
             deposit_data,
         };
-        Ok(serde_json::to_string_pretty(&exports).expect("Failed to serialize validators export"))
+        Ok(exports)
     }
+}
+
+fn set_withdrawal_credentials(
+    existing_withdrawal_credentials: Option<&str>,
+    derived_withdrawal_credentials: Option<PublicKey>,
+) -> Result<Vec<u8>, DepositError> {
+    let withdrawal_credentials = match existing_withdrawal_credentials {
+        Some(creds) => {
+            let execution_addr_regex: Regex = Regex::new(r"^(0x[a-fA-F0-9]{40})$").unwrap();
+            let execution_creds_regex: Regex =
+                Regex::new(r"^(0x01[0]{22}[a-fA-F0-9]{40})$").unwrap();
+            let bls_creds_regex: Regex = Regex::new(r"^(0x00[a-fA-F0-9]{62})$").unwrap();
+
+            let withdrawal_credentials = if execution_addr_regex.is_match(creds) {
+                // see format of execution address: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#eth1_address_withdrawal_prefix
+                let mut formatted_creds = ETH1_CREDENTIALS_PREFIX.to_vec();
+                formatted_creds.extend_from_slice(&creds.as_bytes()[2..]);
+                formatted_creds
+            } else if execution_creds_regex.is_match(creds) || bls_creds_regex.is_match(creds) {
+                // see format of execution & bls credentials https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#bls_withdrawal_prefix
+                let formatted_creds = creds.as_bytes()[2..].to_vec();
+                formatted_creds
+            } else {
+                return Err(DepositError::InvalidWithdrawalCredentials(
+                    "Invalid withdrawal address: Please pass in a valid execution address, execution or BLS credentials with the correct format".to_string(),
+                ));
+            };
+
+            hex::decode(withdrawal_credentials).expect("could not decode hex address ")
+        }
+        None => {
+            let withdrawal_pk = match derived_withdrawal_credentials {
+                Some(pk) => pk,
+                None => {
+                    return Err(DepositError::InvalidWithdrawalCredentials(
+                        "Could not retrieve withdrawal public key from key matieral".to_string(),
+                    ))
+                }
+            };
+
+            get_withdrawal_credentials(&withdrawal_pk, 0)
+        }
+    };
+
+    Ok(withdrawal_credentials)
 }
 
 #[cfg(test)]
 mod test {
 
-    use crate::validators::ValidatorExports;
+    use crate::{
+        validators::{set_withdrawal_credentials, ValidatorExports},
+        DepositExport,
+    };
 
     use super::Validators;
+    use std::str::FromStr;
     use test_log::test;
+    use types::PublicKey;
 
     const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";
 
@@ -209,7 +347,7 @@ mod test {
         fn validators_with_mnemonic() -> Validators {
             Validators::new(
                 Some(PHRASE.as_bytes()),
-                Some("test".as_bytes()),
+                Some("testtest".as_bytes()),
                 Some(1),
                 false,
             )
@@ -219,7 +357,7 @@ mod test {
             validators_with_mnemonic()
                 .export(
                     "mainnet".to_string(),
-                    Some("0100000000000000000000000000000000000000000000000000000000000001"),
+                    Some("0x0000000000000000000000000000000000000001"),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -228,7 +366,7 @@ mod test {
             validators_with_mnemonic()
                 .export(
                     "mainnet".to_string(),
-                    Some("0100000000000000000000000000000000000000000000000000000000000001"),
+                    Some("0x0000000000000000000000000000000000000001"),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -236,68 +374,56 @@ mod test {
                 .unwrap(),
         ];
 
-        let expect_pks = r#""private_keys": [
-    "3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c"
-  ],"#;
-
-        let expect_mnemonic = r#""mnemonic": {
-    "seed": "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup"
-  },"#;
-
-        let expect_deposit_data = r#""deposit_data": [
+        let exp_deposit_data: Vec<DepositExport> = serde_json::from_str(r#"[
     {
-      "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
-      "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001",
-      "amount": 32000000000,
-      "signature": "a1f3ece1cb871e1af29fdaf94cab58d48d128d0ed2342a1f042f49344943c25ec6eab4f2219301e421a88453c6aa29e90b78373a8341c17738bc0ff4d0a724494535b494cd21fd2633a7a12353a5232c9806e1576f1e2447631ec3310db4008b",
-      "deposit_message_root": "dc224ac1c94d70906d643644f20398bdea5dabea123116a9d6135b8f5f4906bd",
-      "deposit_data_root": "f5c6b52d2ba608f0df4123e5ed051b5765a636e09d1372668e1ec074430f2279",
-      "fork_version": "00000000",
-      "network_name": "mainnet",
-      "deposit_cli_version": "2.3.0"
+        "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+        "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001",
+        "amount": 32000000000,
+        "signature": "a1f3ece1cb871e1af29fdaf94cab58d48d128d0ed2342a1f042f49344943c25ec6eab4f2219301e421a88453c6aa29e90b78373a8341c17738bc0ff4d0a724494535b494cd21fd2633a7a12353a5232c9806e1576f1e2447631ec3310db4008b",
+        "deposit_message_root": "dc224ac1c94d70906d643644f20398bdea5dabea123116a9d6135b8f5f4906bd",
+        "deposit_data_root": "f5c6b52d2ba608f0df4123e5ed051b5765a636e09d1372668e1ec074430f2279",
+        "fork_version": "00000000",
+        "network_name": "mainnet",
+        "deposit_cli_version": "2.3.0"
     }
-  ]"#;
+  ]"#).unwrap();
+
         // existing-mnemonic is deterministic, therefore both exports should be as expected
         for export in exports {
-            println!("Export: {:?}", export);
-            // Asserts are for parts of string, cause keystore has different salt all the time.
-            assert!(export.contains(expect_pks));
-            assert!(export.contains(expect_mnemonic));
-            assert!(export.contains(expect_deposit_data));
+            assert_eq!(
+                "3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c",
+                export.private_keys[0]
+            );
+            assert_eq!("entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup", export.mnemonic.seed);
+            assert_eq!(exp_deposit_data, export.deposit_data);
         }
     }
 
     #[test]
     fn test_export_validators_new_mnemonic() {
         fn validators_new_mnemonic() -> Validators {
-            Validators::new(None, Some("test".as_bytes()), Some(1), false)
+            Validators::new(None, Some("testtest".as_bytes()), Some(1), false)
         }
 
         let exports: Vec<ValidatorExports> = vec![
-            serde_json::from_str(
-                &validators_new_mnemonic()
-                    .export(
-                        "mainnet".to_string(),
-                        Some("0100000000000000000000000000000000000000000000000000000000000001"),
-                        32_000_000_000,
-                        "2.3.0".to_string(),
-                        None,
-                    )
-                    .unwrap(),
-            )
-            .unwrap(),
-            serde_json::from_str(
-                &validators_new_mnemonic()
-                    .export(
-                        "mainnet".to_string(),
-                        Some("0100000000000000000000000000000000000000000000000000000000000001"),
-                        32_000_000_000,
-                        "2.3.0".to_string(),
-                        None,
-                    )
-                    .unwrap(),
-            )
-            .unwrap(),
+            validators_new_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
+            validators_new_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
         ];
 
         for export in exports.iter() {
@@ -321,7 +447,7 @@ mod test {
     fn test_export_validators_no_withdrawal_credentials() {
         let validators = Validators::new(
             Some(PHRASE.as_bytes()),
-            Some("test".as_bytes()),
+            Some("testtest".as_bytes()),
             Some(1),
             true,
         );
@@ -336,7 +462,7 @@ mod test {
             )
             .unwrap();
 
-        let expect_deposit_data = r#""deposit_data": [
+        let exp_deposit_data: Vec<DepositExport> = serde_json::from_str(r#"[
     {
       "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
       "withdrawal_credentials": "00e078f11bc1454244bdf9f63a3b997815f081dd6630204186d4c9627a2942f7",
@@ -348,10 +474,66 @@ mod test {
       "network_name": "mainnet",
       "deposit_cli_version": "2.3.0"
     }
-  ]"#;
+  ]"#).unwrap();
 
-        println!("export: {}", export);
+        assert_eq!(exp_deposit_data, export.deposit_data);
+    }
 
-        export.contains(expect_deposit_data);
+    #[test]
+    fn set_withdrawal_credentials_wrong_execution_format() {
+        // should be 0xD4BB555d3B0D7fF17c606161B44E372689C14F4B
+        let response =
+            set_withdrawal_credentials(Some("0x01D4BB555d3B0D7fF17c606161B44E372689C14F4B"), None);
+        assert!(response.is_err());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_valid_execution_address() {
+        let response =
+            set_withdrawal_credentials(Some("0xD4BB555d3B0D7fF17c606161B44E372689C14F4B"), None);
+        assert!(response.is_ok());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_valid_execution_credentials() {
+        let response = set_withdrawal_credentials(
+            Some("0x0100000000000000000000000000000000000000000000000000000000000001"),
+            None,
+        );
+
+        assert!(response.is_ok());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_wrong_bls_format() {
+        // should be 0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d
+        let response = set_withdrawal_credentials(
+            Some("0x45b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d"),
+            None,
+        );
+        assert!(response.is_err());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_valid_bls_format() {
+        let response = set_withdrawal_credentials(
+            Some("0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d"),
+            None,
+        );
+        assert!(response.is_ok());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_error_no_key() {
+        // either withdrawal public key or withdrawal credentials must be provided
+        let response = set_withdrawal_credentials(None, None);
+        assert!(response.is_err());
+    }
+
+    #[test]
+    fn set_withdrawal_credentials_from_public_key() {
+        let pk = PublicKey::from_str(&"0x8478fed8676e9e5d0376c2da97a9e2d67ff5aa11b312aca7856b29f595fcf2c5909c8bafce82f46d9888cd18f780e302").unwrap();
+        let response = set_withdrawal_credentials(None, Some(pk));
+        assert!(response.is_ok());
     }
 }
