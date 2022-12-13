@@ -53,6 +53,17 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 ),
         )
         .arg(
+            Arg::with_name("validator_start_index")
+                .long("validator_start_index")
+                .required(false)
+                .takes_value(true)
+                .help(
+                    "The index of the first validator's keys you wish to generate e.g. if you generated 3 keys before (index #0, index #1, index #2) 
+                    and you want to regenerate starting from the 2nd validator, the validator_start_index would be 1. 
+                    If no start index specified, it will be set to 0.",
+                ),
+        )
+        .arg(
             Arg::with_name("withdrawal_credentials")
                 .long("withdrawal_credentials")
                 .required(false)
@@ -86,12 +97,17 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
 
     let keystore_password = sub_match.value_of("keystore_password");
 
+    let validator_start_index = sub_match
+        .value_of("validator_start_index")
+        .map(|idx| idx.parse::<u32>().expect("invalid validator start index"));
+
     let withdrawal_credentials = sub_match.value_of("withdrawal_credentials");
 
     let validators = Validators::new(
         Some(mnemonic.as_bytes()),
         keystore_password.map(|p| p.as_bytes()),
         Some(num_validators),
+        validator_start_index,
         withdrawal_credentials.is_none(),
     );
     let export: serde_json::Value = validators

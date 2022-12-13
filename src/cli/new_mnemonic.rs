@@ -79,6 +79,7 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
         None,
         keystore_password.map(|p| p.as_bytes()),
         Some(num_validators),
+        None,
         withdrawal_credentials.is_none(),
     );
     let export: serde_json::Value = validators

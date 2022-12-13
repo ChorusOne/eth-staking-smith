@@ -133,12 +133,14 @@ impl Validators {
         seed: &Bip39Seed,
         password: Option<&[u8]>,
         num_validators: Option<u32>,
+        validator_start_index: Option<u32>,
         derive_withdrawal: bool,
     ) -> Vec<VotingKeyMaterial> {
         let mut key_material = vec![];
         for voting_keystore in seed_to_key_material(
             seed,
             num_validators.unwrap_or(1),
+            validator_start_index.unwrap_or(0),
             password,
             derive_withdrawal,
         ) {
@@ -152,6 +154,7 @@ impl Validators {
         mnemonic_phrase: Option<&[u8]>,
         password: Option<&[u8]>,
         num_validators: Option<u32>,
+        validator_start_index: Option<u32>,
         derive_withdrawal: bool,
     ) -> Self {
         let (seed, phrase_string) = get_eth2_seed(mnemonic_phrase);
@@ -162,6 +165,7 @@ impl Validators {
                 &seed,
                 password,
                 num_validators,
+                validator_start_index,
                 derive_withdrawal,
             ),
         }
@@ -172,6 +176,7 @@ impl Validators {
         mnemonic: &Mnemonic,
         password: Option<&[u8]>,
         num_validators: Option<u32>,
+        validator_start_index: Option<u32>,
         derive_withdrawal: bool,
     ) -> Self {
         let mnemonic_phrase = mnemonic.clone().into_phrase();
@@ -182,6 +187,7 @@ impl Validators {
                 &seed,
                 password,
                 num_validators,
+                validator_start_index,
                 derive_withdrawal,
             ),
         }
@@ -349,6 +355,7 @@ mod test {
                 Some(PHRASE.as_bytes()),
                 Some("testtest".as_bytes()),
                 Some(1),
+                Some(0),
                 false,
             )
         }
@@ -402,7 +409,7 @@ mod test {
     #[test]
     fn test_export_validators_new_mnemonic() {
         fn validators_new_mnemonic() -> Validators {
-            Validators::new(None, Some("testtest".as_bytes()), Some(1), false)
+            Validators::new(None, Some("testtest".as_bytes()), Some(1), Some(0), false)
         }
 
         let exports: Vec<ValidatorExports> = vec![
@@ -449,6 +456,7 @@ mod test {
             Some(PHRASE.as_bytes()),
             Some("testtest".as_bytes()),
             Some(1),
+            Some(0),
             true,
         );
 
