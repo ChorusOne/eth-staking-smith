@@ -598,6 +598,113 @@ fn get_test_dir(testcase: &str) -> PathBuf {
     test_path
 }
 
+/*
+    We use the same mnemonic as in testcase multiple validators, but regenerate from the second key
+*/
+#[test]
+fn test_regenerate_from_seed_index() -> Result<(), Box<dyn std::error::Error>> {
+    let chain = "goerli";
+    let expected_decryption_password = "blablatest";
+    let expected_mnemonic = "window lottery throw arrange visit play gate open scare strategy sadness fame soul bronze soap";
+    let num_validators = "2";
+    let validator_start_index = "1";
+    let execution_withdrawal_credentials = "0x0000000000000000000000000000000000000001";
+
+    // test directory
+    let test_dir = get_test_dir("regenerate_from_seed_index");
+
+    // read expected files
+    let expected_deposit_data_json =
+        read_deposit_data_json(&test_dir, "deposit_data-1670927040.json");
+
+    let mut expected_keystore_jsons = vec![];
+    let mut index = 0;
+
+    for entry in std::fs::read_dir(&test_dir)? {
+        let filename = entry?
+            .file_name()
+            .to_str()
+            .expect("could not read filename")
+            .to_owned();
+        if filename.starts_with(&format!("keystore-m_12381_3600_{}", index)) {
+            let keystore_path = test_dir.join(PathBuf::from_str(&filename)?);
+            let keystore_file = std::fs::read_to_string(test_dir.join(keystore_path))?;
+            let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)?;
+            expected_keystore_jsons.push(expected_keystore_json);
+            index = index + 1;
+        }
+    }
+
+    // run eth-staking-smith
+
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("existing-mnemonic");
+    cmd.arg("--chain");
+    cmd.arg(chain);
+    cmd.arg("--keystore_password");
+    cmd.arg(expected_decryption_password);
+    cmd.arg("--mnemonic");
+    cmd.arg(expected_mnemonic);
+    cmd.arg("--num_validators");
+    cmd.arg(num_validators);
+    cmd.arg("--validator_start_index");
+    cmd.arg(validator_start_index);
+    cmd.arg("--withdrawal_credentials");
+    cmd.arg(execution_withdrawal_credentials);
+
+    cmd.assert().success();
+
+    // read generated output
+
+    let output = &cmd.output()?.stdout;
+    let command_output = std::str::from_utf8(output)?;
+    let generated_validator_json: ValidatorExports =
+        serde_json::from_str(command_output).expect("could not unmarshal command output");
+    let generated_private_keys = generated_validator_json.private_keys;
+    let generated_deposit_data = generated_validator_json.deposit_data;
+
+    // decrypt keystore with expected password to derive private key and compare private keys
+    for index in 0..expected_keystore_jsons.len() {
+        let expected_private_key_txt = eth2_keystore::decrypt(
+            expected_decryption_password.as_bytes(),
+            &expected_keystore_jsons[index].crypto,
+        )
+        .expect("could not decrypt keystore");
+        let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+        assert_eq!(
+            expected_private_key,
+            generated_private_keys[index].to_owned()
+        );
+    }
+
+    // compare deposit data entries
+    for index in 0..expected_deposit_data_json.len() {
+        let expected_deposit_data_json = &expected_deposit_data_json[index];
+
+        assert_eq!(
+            expected_deposit_data_json.pubkey.to_string(),
+            generated_deposit_data[index].pubkey
+        );
+        assert_eq!(
+            expected_deposit_data_json
+                .withdrawal_credentials
+                .to_string(),
+            generated_deposit_data[index].withdrawal_credentials
+        );
+        assert_eq!(
+            expected_deposit_data_json.amount.to_string(),
+            generated_deposit_data[index].amount.to_string()
+        );
+        assert_eq!(
+            expected_deposit_data_json.signature.to_string(),
+            generated_deposit_data[index].signature.to_string()
+        );
+    }
+
+    Ok(())
+}
+
 fn read_keystore_json(test_path: &PathBuf, keystore_filename: &str) -> JsonKeystore {
     let keystore_path = test_path.join(Path::new(&keystore_filename));
     let keystore_file =
