@@ -135,6 +135,7 @@ impl Validators {
         num_validators: Option<u32>,
         validator_start_index: Option<u32>,
         derive_withdrawal: bool,
+        kdf: Option<&str>,
     ) -> Vec<VotingKeyMaterial> {
         let mut key_material = vec![];
         for voting_keystore in seed_to_key_material(
@@ -143,6 +144,7 @@ impl Validators {
             validator_start_index.unwrap_or(0),
             password,
             derive_withdrawal,
+            kdf,
         ) {
             key_material.push(voting_keystore);
         }
@@ -156,6 +158,7 @@ impl Validators {
         num_validators: Option<u32>,
         validator_start_index: Option<u32>,
         derive_withdrawal: bool,
+        kdf: Option<&str>,
     ) -> Self {
         let (seed, phrase_string) = get_eth2_seed(mnemonic_phrase);
 
@@ -167,6 +170,7 @@ impl Validators {
                 num_validators,
                 validator_start_index,
                 derive_withdrawal,
+                kdf,
             ),
         }
     }
@@ -178,6 +182,7 @@ impl Validators {
         num_validators: Option<u32>,
         validator_start_index: Option<u32>,
         derive_withdrawal: bool,
+        kdf: Option<&str>,
     ) -> Self {
         let mnemonic_phrase = mnemonic.clone().into_phrase();
         let (seed, _) = get_eth2_seed(Some(mnemonic.clone().into_phrase().as_str().as_bytes()));
@@ -189,6 +194,7 @@ impl Validators {
                 num_validators,
                 validator_start_index,
                 derive_withdrawal,
+                kdf,
             ),
         }
     }
@@ -357,6 +363,66 @@ mod test {
                 Some(1),
                 Some(0),
                 false,
+                None,
+            )
+        }
+
+        let exports = vec![
+            validators_with_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
+            validators_with_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
+        ];
+
+        let exp_deposit_data: Vec<DepositExport> = serde_json::from_str(r#"[
+    {
+        "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+        "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001",
+        "amount": 32000000000,
+        "signature": "a1f3ece1cb871e1af29fdaf94cab58d48d128d0ed2342a1f042f49344943c25ec6eab4f2219301e421a88453c6aa29e90b78373a8341c17738bc0ff4d0a724494535b494cd21fd2633a7a12353a5232c9806e1576f1e2447631ec3310db4008b",
+        "deposit_message_root": "dc224ac1c94d70906d643644f20398bdea5dabea123116a9d6135b8f5f4906bd",
+        "deposit_data_root": "f5c6b52d2ba608f0df4123e5ed051b5765a636e09d1372668e1ec074430f2279",
+        "fork_version": "00000000",
+        "network_name": "mainnet",
+        "deposit_cli_version": "2.3.0"
+    }
+  ]"#).unwrap();
+
+        // existing-mnemonic is deterministic, therefore both exports should be as expected
+        for export in exports {
+            assert_eq!(
+                "3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c",
+                export.private_keys[0]
+            );
+            assert_eq!("entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup", export.mnemonic.seed);
+            assert_eq!(exp_deposit_data, export.deposit_data);
+        }
+    }
+
+    #[test]
+    fn test_export_validators_existing_mnemonic_scrypt() {
+        fn validators_with_mnemonic() -> Validators {
+            Validators::new(
+                Some(PHRASE.as_bytes()),
+                Some("testtest".as_bytes()),
+                Some(1),
+                Some(0),
+                false,
+                Some("scrypt"),
             )
         }
 
@@ -409,7 +475,65 @@ mod test {
     #[test]
     fn test_export_validators_new_mnemonic() {
         fn validators_new_mnemonic() -> Validators {
-            Validators::new(None, Some("testtest".as_bytes()), Some(1), Some(0), false)
+            Validators::new(
+                None,
+                Some("testtest".as_bytes()),
+                Some(1),
+                Some(0),
+                false,
+                None,
+            )
+        }
+
+        let exports: Vec<ValidatorExports> = vec![
+            validators_new_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
+            validators_new_mnemonic()
+                .export(
+                    "mainnet".to_string(),
+                    Some("0x0000000000000000000000000000000000000001"),
+                    32_000_000_000,
+                    "2.3.0".to_string(),
+                    None,
+                )
+                .unwrap(),
+        ];
+
+        for export in exports.iter() {
+            // new-mnemonic generates keys, therefore only the assertions below should be equal
+            assert_eq!(
+                export.deposit_data.get(0).unwrap().withdrawal_credentials,
+                "0100000000000000000000000000000000000000000000000000000000000001"
+            );
+            assert_eq!(export.deposit_data.get(0).unwrap().network_name, "mainnet");
+            assert_eq!(export.deposit_data.get(0).unwrap().amount, 32000000000);
+        }
+
+        // new-mnemonic assert that keys are different
+        assert_ne!(
+            exports.get(0).unwrap().private_keys,
+            exports.get(1).unwrap().private_keys
+        );
+    }
+
+    #[test]
+    fn test_export_validators_new_mnemonic_scrypt() {
+        fn validators_new_mnemonic() -> Validators {
+            Validators::new(
+                None,
+                Some("testtest".as_bytes()),
+                Some(1),
+                Some(0),
+                false,
+                Some("scrypt"),
+            )
         }
 
         let exports: Vec<ValidatorExports> = vec![
@@ -458,6 +582,7 @@ mod test {
             Some(1),
             Some(0),
             true,
+            None,
         );
 
         let export = validators

@@ -1,5 +1,5 @@
 use eth2_hashing::hash;
-use eth2_keystore::json_keystore::{HexBytes, Kdf, Pbkdf2, Prf};
+use eth2_keystore::json_keystore::{HexBytes, Kdf, Pbkdf2, Prf, Scrypt};
 use eth2_keystore::{DKLEN, SALT_SIZE};
 use ssz::Encode;
 use types::PublicKey;
@@ -12,6 +12,18 @@ pub(crate) fn pbkdf2() -> Kdf {
         c: 262_144,
         prf: Prf::HmacSha256,
         salt: HexBytes::from(salt),
+    })
+}
+
+pub(crate) fn scrypt() -> Kdf {
+    let mut salt = vec![0u8; SALT_SIZE];
+    getrandom::getrandom(&mut salt).expect("Failed to generate scrypt salt using getrandom(2)");
+    Kdf::Scrypt(Scrypt {
+        dklen: DKLEN,
+        n: 262144,
+        p: 1,
+        r: 8,
+        salt: salt.into(),
     })
 }
 
