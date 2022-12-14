@@ -1,6 +1,9 @@
 use crate::e2e::DepositDataJson;
 use assert_cmd::prelude::*;
-use eth2_keystore::json_keystore::{Crypto, JsonKeystore};
+use eth2_keystore::{
+    json_keystore::{Crypto, JsonKeystore},
+    Keystore,
+};
 use eth_staking_smith::ValidatorExports;
 use predicates::prelude::*;
 use std::{
@@ -66,6 +69,7 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
         .deposit_data
         .get(0)
         .expect("could not get generated deposit data key");
+    let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     // compare private keys
 
@@ -91,6 +95,9 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
         expected_deposit_data_json.signature.to_string(),
         generated_deposit_data.signature.to_string()
     );
+
+    // check that pbkdf2 was used if nothing else is specified
+    assert_eq!("pbkdf2", parse_kdf_function(keystore));
 
     Ok(())
 }
@@ -523,6 +530,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
         .deposit_data
         .get(0)
         .expect("could not get generated deposit data key");
+    let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     // compare private keys
 
@@ -548,6 +556,9 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
         expected_deposit_data_json.signature.to_string(),
         generated_deposit_data.signature.to_string()
     );
+
+    // check that specified kdf was used
+    assert_eq!("pbkdf2", parse_kdf_function(keystore));
 
     Ok(())
 }
@@ -609,6 +620,7 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
         .deposit_data
         .get(0)
         .expect("could not get generated deposit data key");
+    let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     // compare private keys
 
@@ -634,6 +646,9 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
         expected_deposit_data_json.signature.to_string(),
         generated_deposit_data.signature.to_string()
     );
+
+    // check that correct kdf was used
+    assert_eq!("scrypt", parse_kdf_function(keystore));
 
     Ok(())
 }
@@ -943,4 +958,17 @@ fn read_deposit_data_json(
         std::fs::read_to_string(deposit_data_path).expect("could not read deposit data");
     serde_json::from_str::<Vec<DepositDataJson>>(&deposit_data_file)
         .expect("could not unmarshal deposit data json")
+}
+
+fn parse_kdf_function(keystore: &Keystore) -> String {
+    let keystore_json: JsonKeystore = serde_json::from_str(&keystore.to_json_string().unwrap())
+        .expect("could not parse keystore json");
+    let kdf_function: String = keystore_json
+        .crypto
+        .kdf
+        .function
+        .to_owned()
+        .try_into()
+        .unwrap();
+    kdf_function
 }

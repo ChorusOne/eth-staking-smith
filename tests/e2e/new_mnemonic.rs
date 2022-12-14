@@ -1,5 +1,5 @@
 use assert_cmd::prelude::*;
-use eth2_keystore::Keystore;
+use eth2_keystore::{json_keystore::JsonKeystore, Keystore};
 use eth_staking_smith::ValidatorExports;
 use predicates::prelude::*;
 use std::process::Command;
@@ -47,6 +47,7 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
         .get(0)
         .expect("could not get generated private key")
         .to_owned();
+    let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     generated_deposit_data.validate();
 
@@ -56,6 +57,9 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
         decryption_password,
     );
     assert_eq!(generated_private_key, &encoded_private_key);
+
+    // check pbkdf2 was used if nothing else is specified
+    assert_eq!("pbkdf2", parse_kdf_function(keystore));
 
     Ok(())
 }
@@ -338,6 +342,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
         .get(0)
         .expect("could not get generated private key")
         .to_owned();
+    let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     generated_deposit_data.validate();
 
@@ -347,6 +352,9 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
         decryption_password,
     );
     assert_eq!(generated_private_key, &encoded_private_key);
+
+    // check that correct kdf was used
+    assert_eq!("pbkdf2", parse_kdf_function(keystore));
 
     Ok(())
 }
@@ -395,6 +403,7 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
         .get(0)
         .expect("could not get generated private key")
         .to_owned();
+    let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     generated_deposit_data.validate();
 
@@ -404,6 +413,9 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
         decryption_password,
     );
     assert_eq!(generated_private_key, &encoded_private_key);
+
+    // check that correct kdf was used
+    assert_eq!("scrypt", parse_kdf_function(keystore));
 
     Ok(())
 }
@@ -533,4 +545,17 @@ fn decrypt_generated_keystore(keystore: &Keystore, decryption_password: &str) ->
         .serialize();
     let encoded_private_key = hex::encode(&decrypted_private_key.as_bytes());
     encoded_private_key
+}
+
+fn parse_kdf_function(keystore: &Keystore) -> String {
+    let keystore_json: JsonKeystore = serde_json::from_str(&keystore.to_json_string().unwrap())
+        .expect("could not parse keystore json");
+    let kdf_function: String = keystore_json
+        .crypto
+        .kdf
+        .function
+        .to_owned()
+        .try_into()
+        .unwrap();
+    kdf_function
 }
