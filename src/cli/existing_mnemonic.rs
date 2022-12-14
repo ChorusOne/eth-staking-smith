@@ -34,6 +34,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .long("chain")
                 .required(true)
                 .takes_value(true)
+                .possible_values(&["goerli", "prater", "mainnet", "minimal"])
                 .help(
                     r#"The name of Ethereum PoS chain you are
                 targeting. Use "mainnet" if you are
@@ -86,6 +87,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .long("kdf")
                 .required(false)
                 .takes_value(true)
+                .possible_values(&["scrypt", "pbkdf2"])
                 .help(
                     "Use this argument to select the key derivation function for the keystores depending on your use case with `scrypt` using higher security parameters 
                     and consequently slower performance vs `pbkdf2` achieving better performance with lower security parameters compared to `scrypt`",

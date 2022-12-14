@@ -463,9 +463,9 @@ fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("--num_validators");
     cmd.arg(num_validators);
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Unknown network name passed"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "goerliX' isn't a valid value for '--chain <chain>",
+    ));
 
     Ok(())
 }
@@ -492,9 +492,9 @@ fn test_error_unsupported_kdf() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("--kdf");
     cmd.arg(unsupported_kdf);
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Unsupported kdf function"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "pbkdf3' isn't a valid value for '--kdf <kdf>",
+    ));
 
     Ok(())
 }
