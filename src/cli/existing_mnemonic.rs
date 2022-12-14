@@ -34,6 +34,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .long("chain")
                 .required(true)
                 .takes_value(true)
+                .possible_values(&["goerli", "prater", "mainnet", "minimal"])
                 .help(
                     r#"The name of Ethereum PoS chain you are
                 targeting. Use "mainnet" if you are
@@ -58,9 +59,11 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .required(false)
                 .takes_value(true)
                 .help(
-                    "The index of the first validator's keys you wish to generate e.g. if you generated 3 keys before (index #0, index #1, index #2) 
-                    and you want to regenerate starting from the 2nd validator, the validator_start_index would be 1. 
-                    If no start index specified, it will be set to 0.",
+                    "The index of the first validator's keys you wish to generate 
+                e.g. if you generated 3 keys before (index #0, index #1, index #2) 
+                and you want to regenerate starting from the 2nd validator, 
+                the validator_start_index would be 1. 
+                If no start index specified, it will be set to 0.",
                 ),
         )
         .arg(
@@ -77,6 +80,17 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 ^(0x[a-fA-F0-9]{40})$ for execution addresses, 
                 ^(0x01[0]{22}[a-fA-F0-9]{40})$ for execution withdrawal credentials 
                 and ^(0x00[a-fA-F0-9]{62})$ for BLS withdrawal credentials.",
+                ),
+        )
+        .arg(
+            Arg::with_name("kdf")
+                .long("kdf")
+                .required(false)
+                .takes_value(true)
+                .possible_values(&["scrypt", "pbkdf2"])
+                .help(
+                    "Use this argument to select the key derivation function for the keystores depending on your use case with `scrypt` using higher security parameters 
+                    and consequently slower performance vs `pbkdf2` achieving better performance with lower security parameters compared to `scrypt`",
                 ),
         )
 }
@@ -103,12 +117,15 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
 
     let withdrawal_credentials = sub_match.value_of("withdrawal_credentials");
 
+    let kdf = sub_match.value_of("kdf");
+
     let validators = Validators::new(
         Some(mnemonic.as_bytes()),
         keystore_password.map(|p| p.as_bytes()),
         Some(num_validators),
         validator_start_index,
         withdrawal_credentials.is_none(),
+        kdf,
     );
     let export: serde_json::Value = validators
         .export(
