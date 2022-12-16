@@ -120,7 +120,7 @@ impl TryInto<serde_json::Value> for ValidatorExports {
     type Error = DepositError;
 
     fn try_into(self) -> Result<serde_json::Value, Self::Error> {
-        serde_json::to_value(&self).map_err(|_| {
+        serde_json::to_value(self).map_err(|_| {
             DepositError::SerializationError("Failed to serialize validators export".to_string())
         })
     }
