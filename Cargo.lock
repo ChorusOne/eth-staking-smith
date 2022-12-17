@@ -154,7 +154,7 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 [[package]]
 name = "bls"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "blst",
  "eth2_hashing",
@@ -248,7 +248,7 @@ dependencies = [
 [[package]]
 name = "cached_tree_hash"
 version = "0.1.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "eth2_hashing",
  "eth2_ssz",
@@ -298,12 +298,12 @@ dependencies = [
 [[package]]
 name = "compare_fields"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 
 [[package]]
 name = "compare_fields_derive"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "quote",
  "syn",
@@ -659,7 +659,7 @@ dependencies = [
 [[package]]
 name = "eth2_config"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "paste",
  "types",
@@ -668,7 +668,7 @@ dependencies = [
 [[package]]
 name = "eth2_hashing"
 version = "0.3.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "cpufeatures",
  "lazy_static",
@@ -679,7 +679,7 @@ dependencies = [
 [[package]]
 name = "eth2_interop_keypairs"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "bls",
  "eth2_hashing",
@@ -694,7 +694,7 @@ dependencies = [
 [[package]]
 name = "eth2_key_derivation"
 version = "0.1.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "bls",
  "num-bigint-dig",
@@ -706,7 +706,7 @@ dependencies = [
 [[package]]
 name = "eth2_keystore"
 version = "0.1.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "aes",
  "bls",
@@ -728,7 +728,7 @@ dependencies = [
 [[package]]
 name = "eth2_network_config"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "enr",
  "eth2_config",
@@ -741,7 +741,7 @@ dependencies = [
 [[package]]
 name = "eth2_serde_utils"
 version = "0.1.1"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "ethereum-types",
  "hex",
@@ -753,7 +753,7 @@ dependencies = [
 [[package]]
 name = "eth2_ssz"
 version = "0.4.1"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "ethereum-types",
  "itertools",
@@ -775,7 +775,7 @@ dependencies = [
 [[package]]
 name = "eth2_ssz_types"
 version = "0.2.2"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "derivative",
  "eth2_serde_utils",
@@ -790,7 +790,7 @@ dependencies = [
 [[package]]
 name = "eth2_wallet"
 version = "0.1.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "eth2_key_derivation",
  "eth2_keystore",
@@ -1089,7 +1089,7 @@ dependencies = [
 [[package]]
 name = "int_to_bytes"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "bytes",
 ]
@@ -1713,7 +1713,7 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 [[package]]
 name = "safe_arith"
 version = "0.1.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 
 [[package]]
 name = "salsa20"
@@ -1932,7 +1932,7 @@ dependencies = [
 [[package]]
 name = "swap_or_not_shuffle"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "eth2_hashing",
  "ethereum-types",
@@ -2010,7 +2010,7 @@ dependencies = [
 [[package]]
 name = "test_random_derive"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "quote",
  "syn",
@@ -2120,7 +2120,7 @@ dependencies = [
 [[package]]
 name = "tree_hash"
 version = "0.4.1"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "eth2_hashing",
  "ethereum-types",
@@ -2147,7 +2147,7 @@ checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
 [[package]]
 name = "types"
 version = "0.2.0"
-source = "git+https://github.com/sigp/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=df51a73272489fe154bd10995c96199062b6c3f7#df51a73272489fe154bd10995c96199062b6c3f7"
 dependencies = [
  "bls",
  "cached_tree_hash",
