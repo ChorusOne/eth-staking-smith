@@ -67,7 +67,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 pub fn run<'a>(sub_match: &ArgMatches<'a>) {
     let mnemonic = sub_match.value_of("mnemonic").unwrap();
 
-    let _chain = sub_match
+    let chain = sub_match
         .value_of("chain")
         .expect("missing chain identifier");
 
@@ -85,11 +85,13 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
         execution_address,
     );
 
-    let signed_bls_to_execution_change = bls_to_execution_change.sign();
+    let signed_bls_to_execution_change = bls_to_execution_change.sign(chain);
 
-    signed_bls_to_execution_change
-        .clone()
-        .validate(bls_withdrawal_credentials, execution_address);
+    signed_bls_to_execution_change.clone().validate(
+        bls_withdrawal_credentials,
+        execution_address,
+        chain,
+    );
 
     let export = signed_bls_to_execution_change.export();
 

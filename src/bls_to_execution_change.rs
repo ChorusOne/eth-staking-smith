@@ -1,9 +1,9 @@
-use std::str::FromStr;
-
 use crate::{key_material, seed::get_eth2_seed, utils::get_withdrawal_credentials};
 use lazy_static::lazy_static;
 use regex::Regex;
 use ssz_rs::prelude::*;
+use std::collections::HashMap;
+use std::str::FromStr;
 use types::{Hash256, Keypair, PublicKey, SecretKey, Signature};
 
 const DOMAIN_LEN: usize = 32;
@@ -20,6 +20,32 @@ lazy_static! {
     static ref DOMAIN_BLS_TO_EXECUTION_CHANGE: DomainType =
         Vector::<u8, DOMAIN_TYPE_LEN>::deserialize(&[0x0A, 0, 0, 0])
             .expect("failed to deserialize");
+    static ref CAPELLA_FORK_VERSION: Version =
+        Vector::<u8, DOMAIN_TYPE_LEN>::deserialize(&[0x03, 0, 0, 0])
+            .expect("failed to deserialize");
+    static ref GENESIS_VALIDATORS_ROOT: [u8; 32] =
+        "4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95".as_bytes()[0..32]
+            .try_into()
+            .expect("could not wrap genesis validators root");
+    // FIXME: use the real testnet genesis_validators_root
+    static ref GENESIS_VALIDATORS_ROOT_STUB: [u8; 32] =
+        "4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95".as_bytes()[0..32]
+            .try_into()
+            .expect("could not wrap genesis validators root");
+    static ref GENESIS_VALIDATOR_ROOT: HashMap<String, Node> = HashMap::from([
+        (
+            "mainnet".to_owned(),
+            Node::from_bytes(GENESIS_VALIDATORS_ROOT.to_owned())
+        ),
+        (
+            "prater".to_owned(),
+            Node::from_bytes(GENESIS_VALIDATORS_ROOT_STUB.to_owned())
+        ),
+        (
+            "goerli".to_owned(),
+            Node::from_bytes(GENESIS_VALIDATORS_ROOT_STUB.to_owned())
+        ),
+    ]);
 }
 
 #[derive(SimpleSerialize, Default)]
@@ -68,7 +94,12 @@ pub struct SignedBLSToExecutionChangeExport {
 }
 
 impl SignedBLSToExecutionChange {
-    pub fn validate(self, from_bls_withdrawal_credentials: &str, to_execution_address: &str) {
+    pub fn validate(
+        self,
+        from_bls_withdrawal_credentials: &str,
+        to_execution_address: &str,
+        network: &str,
+    ) {
         // execution address is same as input
         let execution_address = std::str::from_utf8(&self.message.to_execution_address).unwrap();
         assert_eq!(to_execution_address, format!("0x{}", execution_address));
@@ -88,15 +119,17 @@ impl SignedBLSToExecutionChange {
 
         // verify signature
 
-        // FIXME: fork version hardcoded for mainnet
-        let fork_version = Vector::<u8, DOMAIN_TYPE_LEN>::deserialize(&[0x03, 0, 0, 0])
-            .expect("failed to deserialize");
+        let genesis_validator_root = if ["goerli", "prater", "mainnet"].contains(&network) {
+            let genesis_validator_root = GENESIS_VALIDATOR_ROOT.get(network).unwrap();
+            genesis_validator_root
+        } else {
+            panic!("Unknown network name passed");
+        };
 
-        // FIXME: genesis_validators_root hardcoded
         let domain = compute_domain(
             &DOMAIN_BLS_TO_EXECUTION_CHANGE,
-            fork_version,
-            Node::from_bytes(Hash256::zero().0),
+            CAPELLA_FORK_VERSION.to_owned(),
+            genesis_validator_root,
         )
         .expect("could not compute domain");
 
@@ -168,7 +201,7 @@ impl BLSToExecutionRequest {
         }
     }
 
-    pub fn sign(self) -> SignedBLSToExecutionChange {
+    pub fn sign(self, network: &str) -> SignedBLSToExecutionChange {
         let withdrawal_pubkey = Vector::<u8, BLS_PUBKEY_LEN>::deserialize(
             self.bls_keys
                 .pk
@@ -189,7 +222,7 @@ impl BLSToExecutionRequest {
 
         let withdrawal_privkey = secret_key.as_bytes();
 
-        generate_signed_bls_to_execution_change(message, withdrawal_privkey)
+        generate_signed_bls_to_execution_change(message, withdrawal_privkey, network)
             .expect("error generating signing bls to execution change")
     }
 }
@@ -197,16 +230,19 @@ impl BLSToExecutionRequest {
 fn generate_signed_bls_to_execution_change(
     message: BLSToExecutionChange,
     secret_key: &[u8],
+    network: &str,
 ) -> Result<SignedBLSToExecutionChange, Box<dyn std::error::Error>> {
-    // FIXME: hardcoded for mainnet
-    let fork_version = Vector::<u8, DOMAIN_TYPE_LEN>::deserialize(&[0x03, 0, 0, 0])
-        .expect("failed to deserialize");
+    let genesis_validator_root = if ["goerli", "prater", "mainnet"].contains(&network) {
+        let genesis_validator_root = GENESIS_VALIDATOR_ROOT.get(network).unwrap();
+        genesis_validator_root
+    } else {
+        panic!("Unknown network name passed");
+    };
 
-    // FIXME: hardcoded for mainnet
     let domain = compute_domain(
         &DOMAIN_BLS_TO_EXECUTION_CHANGE,
-        fork_version,
-        Node::from_bytes(Hash256::zero().0),
+        CAPELLA_FORK_VERSION.to_owned(),
+        genesis_validator_root,
     )?;
 
     let signing_root = compute_signing_root(message.clone(), domain)?;
@@ -220,7 +256,7 @@ fn generate_signed_bls_to_execution_change(
 fn compute_domain(
     domain_type: &DomainType,
     fork_version: Version,
-    genesis_validators_root: Node,
+    genesis_validators_root: &Node,
 ) -> Result<Domain, MerkleizationError> {
     let fork_data_root = compute_fork_data_root(fork_version, genesis_validators_root)?;
     let mut bytes = Vec::new();
@@ -232,11 +268,11 @@ fn compute_domain(
 /// based on https://github.com/ethereum/consensus-specs/blob/02b32100ed26c3c7a4a44f41b932437859487fd2/specs/phase0/beacon-chain.md#compute_fork_data_root
 fn compute_fork_data_root(
     current_version: Version,
-    genesis_validators_root: Node,
+    genesis_validators_root: &Node,
 ) -> Result<Node, MerkleizationError> {
     ForkData {
         current_version,
-        genesis_validators_root,
+        genesis_validators_root: genesis_validators_root.to_owned(),
     }
     .hash_tree_root()
 }
@@ -291,7 +327,7 @@ mod test {
 
         let bls_to_execution_change =
             BLSToExecutionRequest::new(PHRASE.as_bytes(), 0, EXECUTION_WITHDRAWAL_ADDRESS);
-        let signed_bls_to_execution_change = bls_to_execution_change.sign();
+        let signed_bls_to_execution_change = bls_to_execution_change.sign("mainnet");
 
         // format generated fields for assertion
         let to_execution_address =
