@@ -4,7 +4,7 @@ use eth2_keystore::{
     json_keystore::Kdf, keypair_from_secret, Keystore, KeystoreBuilder, PlainText,
 };
 use eth2_wallet::{KeyType, ValidatorPath};
-use types::{Keypair, PublicKey};
+use types::Keypair;
 
 use crate::utils::{pbkdf2, scrypt};
 
@@ -14,7 +14,7 @@ pub struct VotingKeyMaterial {
     pub keystore: Option<Keystore>,
     pub keypair: Keypair,
     pub voting_secret: PlainText,
-    pub withdrawal_pk: Option<PublicKey>,
+    pub withdrawal_keypair: Option<Keypair>,
 }
 
 /// Given eth2 wallet seed, create N key material wrappers,
@@ -47,11 +47,11 @@ pub(crate) fn seed_to_key_material(
                     .build()
                     .expect("Failed to build keystore")
             });
-            let withdrawal_pk = if derive_withdrawal {
+            let withdrawal_keypair = if derive_withdrawal {
                 let master =
                     DerivedKey::from_seed(seed.as_bytes()).expect("Invalid seed is provided");
                 let (_, _, withdrawal_keypair) = derive_keypair(master, idx, KeyType::Withdrawal);
-                Some(withdrawal_keypair.pk)
+                Some(withdrawal_keypair)
             } else {
                 None
             };
@@ -60,7 +60,7 @@ pub(crate) fn seed_to_key_material(
                 keystore,
                 keypair,
                 voting_secret,
-                withdrawal_pk,
+                withdrawal_keypair,
             }
         })
         .collect()
@@ -160,7 +160,7 @@ mod test {
                 hex::encode(secret_key.as_bytes())
             );
             // we didn't derive a pk, but will set the one passed in
-            assert!(key_material.withdrawal_pk.is_none());
+            assert!(key_material.withdrawal_keypair.is_none());
         }
     }
 
@@ -195,14 +195,14 @@ mod test {
         for i in 0..keystores.len() {
             let key_material = keystores.get(i).unwrap();
             let keystore = key_material.keystore.as_ref().unwrap();
-            let withdrawal_key = key_material.withdrawal_pk.as_ref().unwrap();
+            let withdrawal_key = &key_material.withdrawal_keypair.as_ref().unwrap().pk;
             assert_eq!(
                 expected_pub_keys.get(i).unwrap().to_owned(),
                 keystore.pubkey()
             );
             assert_eq!(
                 expected_withdrawal_keys.get(i).unwrap().to_owned(),
-                withdrawal_creds_from_pk(withdrawal_key)
+                withdrawal_creds_from_pk(&withdrawal_key)
             );
         }
     }
@@ -255,7 +255,7 @@ mod test {
         for i in 0..keystores.len() {
             let key_material = keystores.get(i).unwrap();
             let keystore = key_material.keystore.as_ref().unwrap();
-            let withdrawal_key = &key_material.withdrawal_pk.as_ref().unwrap();
+            let withdrawal_key = &key_material.withdrawal_keypair.as_ref().unwrap().pk;
             let kdf_function = parse_kdf_function(keystore);
             assert_eq!(
                 expected_pub_keys.get(i).unwrap().to_owned(),

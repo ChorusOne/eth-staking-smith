@@ -126,7 +126,7 @@ mod test {
             keystore: Some(keystore.clone()),
             keypair: keypair.clone(),
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
-            withdrawal_pk: None,
+            withdrawal_keypair: None,
         };
         let (deposit_data, _) = keystore_to_deposit(
             &key_material,
@@ -165,7 +165,7 @@ mod test {
             keystore: Some(keystore.clone()),
             keypair: keypair.clone(),
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
-            withdrawal_pk: None,
+            withdrawal_keypair: None,
         };
         let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
         let (deposit_data, _) = keystore_to_deposit(
@@ -205,7 +205,7 @@ mod test {
             keystore: Some(keystore.clone()),
             keypair: keypair.clone(),
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
-            withdrawal_pk: Some(pk.clone()),
+            withdrawal_keypair: Some(keypair.clone()),
         };
         let withdrawal_creds = get_withdrawal_credentials(&pk, 0);
         let (deposit_data, _) = keystore_to_deposit(
@@ -252,7 +252,7 @@ mod test {
                     .as_bytes()
                     .to_vec(),
             ),
-            withdrawal_pk: None,
+            withdrawal_keypair: None,
         };
         let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
         let (deposit_data, _) = keystore_to_deposit(
@@ -287,7 +287,7 @@ mod test {
             keystore: Some(keystore.clone()),
             keypair: keypair.clone(),
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
-            withdrawal_pk: None,
+            withdrawal_keypair: None,
         };
         let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
         let (deposit_data, _) = keystore_to_deposit(
