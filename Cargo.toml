@@ -14,20 +14,25 @@ path = "src/lib.rs"
 
 [dependencies]
 clap = "^2.33"
+derive_more = "0.15"
 eth2_hashing = "0.3.0"
 eth2_key_derivation = { git = "https://github.com/ChorusOne/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_keystore = { git = "https://github.com/ChorusOne/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_network_config = { git = "https://github.com/ChorusOne/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 eth2_ssz = "0.4.1"
 eth2_wallet = { git = "https://github.com/ChorusOne/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
+ethereum-types = { version = "0.12.1", optional = true }
 env_logger = "^0.6.0"
 hex = "0.4"
+lazy_static = "1.4"
 log = "^0.4"
 getrandom = "0.2"
 regex = "1.5.5"
 serde = "1.0.115"
 serde_derive = "1.0"
 serde_json = "1.0"
+ssz-rs = { git = "https://github.com/ralexstokes/ssz-rs.git", rev = "cb08f18ca919cc1b685b861d0fa9e2daabe89737" }
+ssz-rs-derive = { git = "https://github.com/ralexstokes/ssz-rs.git", rev = "cb08f18ca919cc1b685b861d0fa9e2daabe89737" }
 tiny-bip39 = "^0.8.0"
 tree_hash = { git = "https://github.com/ChorusOne/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}
 types = { git = "https://github.com/ChorusOne/lighthouse", rev = "df51a73272489fe154bd10995c96199062b6c3f7"}

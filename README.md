@@ -11,7 +11,8 @@ Why we need yet another keystore / deposit tool:
 2. ability to use as a library to automate key and deposit data generation
 3. opt-out of writing to filesystem for better security
 4. defer entropy collection to operating system by using `getrandom`
-4. ability to overwrite withdrawal credentials for new and existing mnemonic
+5. ability to overwrite withdrawal credentials for new and existing mnemonic
+6. ability to generate a `SignedBLSToExecutionChange` message to convert your BLS withdrawal address `0x00` to an execution `0x01` address
 
 # Usage
 
@@ -45,6 +46,36 @@ Regenerate key and deposit data with existing mnemonic:
 
 ```
 ./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
+```
+
+## Converting your BLS 0x00 withdrawal address 
+
+Ethereum will be implementing a push-based approach for withdrawals, see [EIP-4895 docs](https://eips.ethereum.org/EIPS/eip-4895).
+
+Those who have configured a BLS withdrawal address (0x00) in the validators deposit contract, will have to undergo the following steps: 
+1. generate a signed message to trigger BLS to execution address
+2. send the signed message to the beacon node
+
+You can use `eth-staking-smith` as follows to convert your address:
+
+### Command to generate SignedBLSToExecutionChange
+
+```
+./target/debug/eth-staking-smith bls-to-execution-change --chain mainnet --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --validator_index 0 --withdrawal_credentials "0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d"
+--execution_address "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+```
+
+### Command to send SignedBLSToExecutionChange request to Beacon node
+
+```
+curl -H "Content-Type: application/json" -d '{
+  "message": {
+    "validator_index": 0,
+    "from_bls_pubkey": "0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d",
+    "to_execution_address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+  },
+  "signature": "0x9220e5badefdfe8abc36cae01af29b981edeb940ff88c438f72c8af876fbd6416138c85f5348c5ace92a081fa15291aa0ffb856141b871dc807f3ec2fe9c8415cac3d76579c61455ab3938bc162e139d060c8aa13fcd670febe46bf0bb579c5a"
+}' http://localhost:3500/eth/v1/beacon/pool/bls_to_execution_change
 ```
 
 # Implementation Details 

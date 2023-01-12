@@ -11,8 +11,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tree_hash::TreeHash;
 use types::{
-    DepositData, Hash256, MainnetEthSpec, PublicKey, PublicKeyBytes, Signature, SignatureBytes,
-    SignedRoot,
+    DepositData, Hash256, Keypair, MainnetEthSpec, PublicKey, PublicKeyBytes, Signature,
+    SignatureBytes, SignedRoot,
 };
 
 const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
@@ -252,7 +252,7 @@ impl Validators {
 
             let withdrawal_credentials = set_withdrawal_credentials(
                 withdrawal_credentials,
-                key_with_store.withdrawal_pk.clone(),
+                key_with_store.withdrawal_keypair.clone(),
             )?;
 
             let public_key = key_with_store.keypair.pk.as_hex_string().replace("0x", "");
@@ -296,7 +296,7 @@ impl Validators {
 
 fn set_withdrawal_credentials(
     existing_withdrawal_credentials: Option<&str>,
-    derived_withdrawal_credentials: Option<PublicKey>,
+    derived_withdrawal_credentials: Option<Keypair>,
 ) -> Result<Vec<u8>, DepositError> {
     let withdrawal_credentials = match existing_withdrawal_credentials {
         Some(creds) => {
@@ -324,7 +324,7 @@ fn set_withdrawal_credentials(
         }
         None => {
             let withdrawal_pk = match derived_withdrawal_credentials {
-                Some(pk) => pk,
+                Some(pk) => pk.pk,
                 None => {
                     return Err(DepositError::InvalidWithdrawalCredentials(
                         "Could not retrieve withdrawal public key from key matieral".to_string(),
@@ -348,9 +348,8 @@ mod test {
     };
 
     use super::Validators;
-    use std::str::FromStr;
     use test_log::test;
-    use types::PublicKey;
+    use types::Keypair;
 
     const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";
 
@@ -665,8 +664,8 @@ mod test {
 
     #[test]
     fn set_withdrawal_credentials_from_public_key() {
-        let pk = PublicKey::from_str(&"0x8478fed8676e9e5d0376c2da97a9e2d67ff5aa11b312aca7856b29f595fcf2c5909c8bafce82f46d9888cd18f780e302").unwrap();
-        let response = set_withdrawal_credentials(None, Some(pk));
+        let keypair = Keypair::random();
+        let response = set_withdrawal_credentials(None, Some(keypair));
         assert!(response.is_ok());
     }
 }
