@@ -9,7 +9,8 @@ use std::process::Command;
 fn test_bls_to_execution_change() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
-    let validator_index = "0";
+    let validator_start_index = "0";
+    let validator_index = "100";
     let execution_address = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
     let bls_withdrawal_credentials =
         "0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d";
@@ -19,6 +20,8 @@ fn test_bls_to_execution_change() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("bls-to-execution-change");
     cmd.arg("--chain");
     cmd.arg(chain);
+    cmd.arg("--validator_start_index");
+    cmd.arg(validator_start_index);
     cmd.arg("--validator_index");
     cmd.arg(validator_index);
     cmd.arg("--mnemonic");
@@ -38,7 +41,7 @@ fn test_bls_to_execution_change() -> Result<(), Box<dyn std::error::Error>> {
     let signed_bls_to_execution_change: SignedBLSToExecutionChangeExport =
         serde_json::from_str(command_output)?;
 
-    assert_eq!(0, signed_bls_to_execution_change.message.validator_index);
+    assert_eq!(100, signed_bls_to_execution_change.message.validator_index);
     assert_eq!(
         "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
         signed_bls_to_execution_change.message.to_execution_address

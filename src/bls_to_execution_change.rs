@@ -167,6 +167,7 @@ impl BLSToExecutionRequest {
     pub fn new(
         mnemonic_phrase: &[u8],
         validator_start_index: u32,
+        validator_index: u32,
         execution_address: &str,
     ) -> Self {
         let (seed, _) = get_eth2_seed(Some(mnemonic_phrase));
@@ -192,7 +193,7 @@ impl BLSToExecutionRequest {
             .expect("Error deriving key material from mnemonic");
 
         BLSToExecutionRequest {
-            validator_index: validator_start_index,
+            validator_index,
             bls_keys: key_material
                 .withdrawal_keypair
                 .clone()
@@ -326,8 +327,8 @@ mod test {
         }
 
         let bls_to_execution_change =
-            BLSToExecutionRequest::new(PHRASE.as_bytes(), 0, EXECUTION_WITHDRAWAL_ADDRESS);
-        let signed_bls_to_execution_change = bls_to_execution_change.sign("mainnet");
+            BLSToExecutionRequest::new(PHRASE.as_bytes(), 0, 100, EXECUTION_WITHDRAWAL_ADDRESS);
+        let signed_bls_to_execution_change = bls_to_execution_change.clone().sign("mainnet");
 
         // format generated fields for assertion
         let to_execution_address =
@@ -339,6 +340,9 @@ mod test {
         let withdrawal_pub_key =
             PublicKey::from_str(&format!("0x{}", withdrawal_pub_key_str)).unwrap();
 
+        let validator_index = bls_to_execution_change.clone().validator_index;
+
+        assert_eq!(100, validator_index);
         assert_eq!(
             EXECUTION_WITHDRAWAL_ADDRESS,
             format!("0x{}", to_execution_address)
