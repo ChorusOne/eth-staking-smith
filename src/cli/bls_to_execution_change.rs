@@ -31,16 +31,25 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 ),
         )
         .arg(
-            Arg::with_name("validator_index")
-                .long("validator_index")
-                .required(true)
+            Arg::with_name("validator_start_index")
+                .long("validator_start_index")
+                .required(false)
                 .takes_value(true)
                 .help(
                     "The index of the first validator's keys you wish to generate the address for
                 e.g. if you generated 3 keys before (index #0, index #1, index #2) 
                 and you want to generate for the 2nd validator, 
-                the validator_index would be 1. 
+                the validator_start_index would be 1. 
                 If no index specified, it will be set to 0.",
+                ),
+        )
+        .arg(
+            Arg::with_name("validator_index")
+                .long("validator_index")
+                .required(true)
+                .takes_value(true)
+                .help(
+                    "On-chain index of the validator.",
                 ),
         )
         .arg(
@@ -71,6 +80,11 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
         .value_of("chain")
         .expect("missing chain identifier");
 
+    let validator_start_index = sub_match
+        .value_of("validator_start_index")
+        .map(|idx| idx.parse::<u32>().expect("invalid validator index"))
+        .unwrap_or(0);
+
     let validator_index = sub_match
         .value_of("validator_index")
         .map(|idx| idx.parse::<u32>().expect("invalid validator index"))
@@ -81,6 +95,7 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
 
     let bls_to_execution_change = bls_to_execution_change::BLSToExecutionRequest::new(
         mnemonic.as_bytes(),
+        validator_start_index,
         validator_index,
         execution_address,
     );
