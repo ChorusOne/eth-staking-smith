@@ -14,6 +14,10 @@ Why we need yet another keystore / deposit tool:
 5. ability to overwrite withdrawal credentials for new and existing mnemonic
 6. ability to generate a `SignedBLSToExecutionChange` message to convert your BLS withdrawal address `0x00` to an execution `0x01` address
 
+# Blog post
+
+[Performant Ethereum validator key management](https://medium.com/chorus-one/eth-staking-smith-1ca8374571b5?source=rss-------1)
+
 # Usage
 
 ```
