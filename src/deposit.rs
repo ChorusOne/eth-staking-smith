@@ -1,9 +1,8 @@
 use eth2_keystore::keypair_from_secret;
-use eth2_network_config::Eth2NetworkConfig;
 use std::path::Path;
-use types::{ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, Signature};
+use types::{ChainSpec, Config, DepositData, Hash256, MinimalEthSpec, Signature};
 
-use crate::key_material::VotingKeyMaterial;
+use crate::{key_material::VotingKeyMaterial, networks::NetworkSpec};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DepositError {
@@ -23,7 +22,7 @@ pub(crate) fn keystore_to_deposit(
     // withdrawal credentials
     withdrawal_credentials: &[u8],
     deposit_amount_gwei: u64,
-    network: String,
+    network: NetworkSpec,
     chain_spec_file: Option<String>,
 ) -> Result<(DepositData, ChainSpec), DepositError> {
     // Validate data input
@@ -41,22 +40,14 @@ pub(crate) fn keystore_to_deposit(
         ));
     };
 
-    let network_str = network.as_str();
-    let spec;
-
-    if ["goerli", "prater", "mainnet"].contains(&network_str) {
-        spec = Eth2NetworkConfig::constant(network_str)
-            .unwrap()
-            .unwrap()
-            .chain_spec::<MainnetEthSpec>()
-            .unwrap();
-    } else if network_str == "minimal" {
+    let spec = if !network.is_public() {
+        // Loads custom configuration for private net
         if chain_spec_file.is_none() {
             return Err(DepositError::NoCustomConfig(
                 "Custom config for minimal network must be provided".to_string(),
             ));
         }
-        spec = match Config::from_file(Path::new(chain_spec_file.unwrap().as_str())) {
+        match Config::from_file(Path::new(chain_spec_file.unwrap().as_str())) {
             Ok(cfg) => cfg
                 .apply_to_chain_spec::<MinimalEthSpec>(&ChainSpec::minimal())
                 .unwrap(),
@@ -68,10 +59,8 @@ pub(crate) fn keystore_to_deposit(
             }
         }
     } else {
-        return Err(DepositError::InvalidNetworkName(
-            "Unknown network name passed".to_string(),
-        ));
-    }
+        network.into()
+    };
 
     let credentials_hash = Hash256::from_slice(withdrawal_credentials);
 
@@ -105,7 +94,9 @@ mod test {
     use types::PublicKey;
 
     use super::keystore_to_deposit;
-    use crate::{key_material::VotingKeyMaterial, utils::get_withdrawal_credentials};
+    use crate::{
+        key_material::VotingKeyMaterial, networks::NetworkSpec, utils::get_withdrawal_credentials,
+    };
     use std::{path::PathBuf, str::FromStr};
     use test_log::test;
 
@@ -132,7 +123,7 @@ mod test {
             &key_material,
             withdrawal_creds.as_slice(),
             32_000_000_000,
-            "mainnet".to_string(),
+            NetworkSpec::Mainnet,
             None,
         )
         .unwrap();
@@ -172,7 +163,7 @@ mod test {
             &key_material,
             withdrawal_creds.as_slice(),
             32_000_000_000,
-            "mainnet".to_string(),
+            NetworkSpec::Mainnet,
             None,
         )
         .unwrap();
@@ -212,7 +203,7 @@ mod test {
             &key_material,
             &withdrawal_creds,
             32_000_000_000,
-            "mainnet".to_string(),
+            NetworkSpec::Mainnet,
             None,
         )
         .unwrap();
@@ -259,7 +250,7 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            "goerli".to_string(),
+            NetworkSpec::Goerli,
             None,
         )
         .unwrap();
@@ -294,7 +285,7 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            "minimal".to_string(),
+            NetworkSpec::Minimal,
             Some(manifest.to_str().unwrap().to_string()),
         )
         .unwrap();
@@ -308,6 +299,49 @@ mod test {
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
         assert_eq!(
             "ad1c1e0d3b230e2d3a1366c0bef83dcb8ce7ac7827353b74ed7abea2153e06638f338226925e141dd74c13a41c6f602f13a70ccf3ca74e76739810c20a76f6a5b71d9bd2e093a13a97ad8eb7ad0e3ce3e5b3c172af2dc9b8368fe3f645345aee",
+            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_deposit_gnosis() {
+        let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair,
+            voting_secret: PlainText::from(
+                keystore
+                    .decrypt_keypair(PASSWORD)
+                    .unwrap()
+                    .sk
+                    .serialize()
+                    .as_bytes()
+                    .to_vec(),
+            ),
+            withdrawal_keypair: None,
+        };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH1).unwrap();
+        let (deposit_data, _) = keystore_to_deposit(
+            &key_material,
+            &withdrawal_creds.as_slice(),
+            32_000_000_000,
+            NetworkSpec::Gnosis,
+            None,
+        )
+        .unwrap();
+
+        // Signature asserted here is generated with
+        // https://github.com/gnosischain/validator-data-generator
+
+        // python ./staking_deposit/deposit.py existing-mnemonic --eth1_withdrawal_address=0x010000000000000000000000000000000000000001
+
+        // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
+        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
+        // Please choose how many new validators you wish to run: 1
+        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'ropsten', 'goerli', 'kiln', 'sepolia', 'gnosis', 'chiado']:  [gnosis]: gnosis
+        assert_eq!(
+            "97cb6902975fc7cdcd685006ca972a22799aece787b9665af9e0b501e70a4db100cf280c99f1b20ea49c953b526b0e760b4a6d6a8d1092a6afbad3efdab8269384f2034c4fd97ebd8fc2101467b2fe6aeadcf5fcfaa11952be8d3939a55b10f7",
             deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
         );
     }
