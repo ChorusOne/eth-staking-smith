@@ -16,11 +16,11 @@ path = "src/lib.rs"
 clap = "^2.33"
 derive_more = "0.15"
 eth2_hashing = "0.3.0"
-eth2_key_derivation = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-eth2_keystore = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-eth2_network_config = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
+eth2_key_derivation = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+eth2_keystore = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+eth2_network_config = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e" }
 eth2_ssz = "0.4.1"
-eth2_wallet = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
+eth2_wallet = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
 ethereum-types = { version = "0.14.1", optional = true }
 env_logger = "^0.6.0"
 hex = "0.4"
@@ -35,19 +35,18 @@ serde_json = "1.0"
 ssz-rs = { git = "https://github.com/ChorusOne/ssz-rs.git", rev = "cb08f18ca919cc1b685b861d0fa9e2daabe89737" }
 ssz-rs-derive = { git = "https://github.com/ChorusOne/ssz-rs.git", rev = "cb08f18ca919cc1b685b861d0fa9e2daabe89737" }
 tiny-bip39 = "^0.8.0"
-tree_hash = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-types = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
+tree_hash = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+types = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
 uuid = { version = "0.8.1", features = ["v4"] }
 
 [patch.crates-io]
-eth2_hashing = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-eth2_serde_utils = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-eth2_ssz = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-eth2_ssz_types = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-tree_hash = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-tree_hash_derive = { git = "https://github.com/ChorusOne/lighthouse", rev = "38514c07f222ff7783834c48cf5c0a6ee7f346d0"}
-# Override for https://rustsec.org/advisories/RUSTSEC-2022-0090
-libsqlite3-sys = { git = "https://github.com/ChorusOne/rusqlite", rev = "f4f95f8caf9fd53bffd0c19530be2484c644cc16" }
+eth2_hashing = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+eth2_serde_utils = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+eth2_ssz = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+eth2_ssz_derive = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+eth2_ssz_types = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+tree_hash = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
+tree_hash_derive = { git = "https://github.com/ChorusOne/lighthouse", rev = "ef90a15aae791435a4180d7e6bc1d8e29ced6e2e"}
 
 [dev-dependencies]
 test-log = "^0.2"
