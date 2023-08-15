@@ -1,4 +1,3 @@
-use eth2_hashing::hash;
 use eth2_keystore::json_keystore::{HexBytes, Kdf, Pbkdf2, Prf, Scrypt};
 use eth2_keystore::{DKLEN, SALT_SIZE};
 use ssz::Encode;
@@ -31,7 +30,7 @@ pub(crate) fn scrypt() -> Kdf {
 ///
 /// Used for submitting deposits to the Eth1 deposit contract.
 pub(crate) fn get_withdrawal_credentials(pubkey: &PublicKey, prefix_byte: u8) -> Vec<u8> {
-    let hashed = hash(&pubkey.as_ssz_bytes());
+    let hashed = ethereum_hashing::hash(&pubkey.as_ssz_bytes());
     let mut prefixed = vec![prefix_byte];
     prefixed.extend_from_slice(&hashed[1..]);
 
