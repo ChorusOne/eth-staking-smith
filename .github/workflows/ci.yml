@@ -37,3 +37,10 @@ jobs:
       - name: Build
         run: |
           cargo build --release
+
+
+  cargo-deny:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: EmbarkStudios/cargo-deny-action@v1
