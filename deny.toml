@@ -1,0 +1,34 @@
+# When outputting inclusion graphs in diagnostics that include features, this
+# option can be used to specify the depth at which feature edges will be added.
+# This option is included since the graphs can be quite large and the addition
+# of features from the crate(s) to all of the graph roots can be far too verbose.
+# This option can be overridden via `--feature-depth` on the cmd line
+feature-depth = 1
+
+[licenses]
+# The lint level for crates which do not have a detectable license
+unlicensed = "allow"
+# List of explicitly allowed licenses
+# [possible values: any SPDX 3.11 short identifier (+ optional exception)].
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "ISC",
+    "CC0-1.0",
+    "Unicode-DFS-2016",
+    "BSD-3-Clause"
+]
+
+
+#
+# Denies versions of Serde derive which contain precompiled binary by default
+# See
+# https://github.com/serde-rs/serde/pull/2590
+# https://github.com/serde-rs/serde/issues/2538
+# https://github.com/rustsec/advisory-db/pull/1738
+#
+[bans]
+deny = [
+    { name = "serde_derive", version = ">1.0.171, <1.0.185" }
+]

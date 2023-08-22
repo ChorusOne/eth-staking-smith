@@ -28,7 +28,7 @@ lazy_static = "1.4"
 log = "^0.4"
 getrandom = "0.2"
 regex = "1.9.3"
-serde = "1.0.183"
+serde = "1.0.185"
 serde_derive = "1.0"
 serde_json = "1.0"
 ssz-rs = { git = "https://github.com/ChorusOne/ssz-rs.git", rev = "cb08f18ca919cc1b685b861d0fa9e2daabe89737" }
