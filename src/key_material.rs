@@ -85,9 +85,8 @@ mod test {
     use crate::utils;
 
     use super::seed_to_key_material;
-    use bip39::{Language, Mnemonic, Seed};
+    use ::bip39::{Language, Mnemonic, Seed};
     use eth2_keystore::{json_keystore::JsonKeystore, Keystore};
-    use eth2_wallet::*;
     use pretty_assertions::assert_eq;
     use test_log::test;
     use types::{Hash256, PublicKey};
