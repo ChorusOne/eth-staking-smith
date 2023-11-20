@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::deposit::{keystore_to_deposit, DepositError};
 use crate::key_material::{seed_to_key_material, VotingKeyMaterial};
+use crate::networks::NetworkSpec;
 use crate::seed::get_eth2_seed;
 use crate::utils::get_withdrawal_credentials;
 use bip39::{Mnemonic, Seed as Bip39Seed};
@@ -243,6 +244,8 @@ impl Validators {
         let mut private_keys: Vec<String> = vec![];
         let mut deposit_data: Vec<DepositExport> = vec![];
 
+        let network_spec = NetworkSpec::try_from(network)?;
+
         for key_with_store in self.key_material.iter() {
             if let Some(ks) = key_with_store.keystore.clone() {
                 keystores.push(ks);
@@ -260,7 +263,7 @@ impl Validators {
                 &(*key_with_store).clone(),
                 withdrawal_credentials.as_ref(),
                 deposit_amount_gwei,
-                network.clone(),
+                network_spec.clone(),
                 chain_spec_file.clone(),
             )?;
 
@@ -278,7 +281,7 @@ impl Validators {
                 deposit_message_root: hex::encode(deposit.as_deposit_message().tree_hash_root()),
                 deposit_data_root: hex::encode(deposit.tree_hash_root()),
                 fork_version: hex::encode(chain_spec.genesis_fork_version),
-                network_name: network.clone(),
+                network_name: Into::<&'static str>::into(network_spec.clone()).to_string(),
                 deposit_cli_version: deposit_cli_version.clone(),
             })
         }

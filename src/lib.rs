@@ -2,6 +2,7 @@ pub mod bls_to_execution_change;
 pub mod cli;
 pub(crate) mod deposit;
 pub(crate) mod key_material;
+pub mod networks;
 pub(crate) mod seed;
 pub(crate) mod utils;
 pub mod validators;
