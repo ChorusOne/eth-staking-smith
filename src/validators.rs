@@ -185,7 +185,7 @@ impl Validators {
         kdf: Option<&str>,
     ) -> Self {
         let mnemonic_phrase = mnemonic.clone().into_phrase();
-        let (seed, _) = get_eth2_seed(Some(mnemonic.clone().into_phrase().as_str().as_bytes()));
+        let (seed, _) = get_eth2_seed(Some(mnemonic.clone().into_phrase().as_bytes()));
         Self {
             mnemonic_phrase,
             key_material: Validators::key_material_from_seed(

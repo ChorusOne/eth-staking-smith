@@ -44,7 +44,7 @@ pub(crate) fn keystore_to_deposit(
     let network_str = network.as_str();
     let spec;
 
-    if ["goerli", "prater", "mainnet"].contains(&network_str) {
+    if ["goerli", "prater", "mainnet", "holesky"].contains(&network_str) {
         spec = Eth2NetworkConfig::constant(network_str)
             .unwrap()
             .unwrap()
@@ -273,6 +273,51 @@ mod test {
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: prater
         assert_eq!(
             "aa954f22199db5ceb3f3b4b76740408af43cabf5724af5db530f7452f204b44026809e145003827b3c9cbd979bb035a3160b2f231aec3ccabc4fe039030a8baf36b4ad5d458ba672714f327e4705f14c501c3184b9c1fd171470c5170002fa8c",
+            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_deposit_holesky() {
+        let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair,
+            voting_secret: PlainText::from(
+                keystore
+                    .decrypt_keypair(PASSWORD)
+                    .unwrap()
+                    .sk
+                    .serialize()
+                    .as_bytes()
+                    .to_vec(),
+            ),
+            withdrawal_keypair: None,
+        };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
+        let (deposit_data, _) = keystore_to_deposit(
+            &key_material,
+            &withdrawal_creds.as_slice(),
+            32_000_000_000,
+            "holesky".to_string(),
+            None,
+        )
+        .unwrap();
+
+        // python ./staking_deposit/deposit.py existing-mnemonic --keystore_password testtest
+
+        // ***Using the tool on an offline and secure device is highly recommended to keep your mnemonic safe.***
+
+        // Please choose your language ['1. العربية', '2. ελληνικά', '3. English', '4. Français', '5. Bahasa melayu', '6. Italiano', '7. 日本語', '8. 한국어', '9. Português do Brasil', '10. român', '11. Türkçe', '12. 简体中文']:  [English]:
+        // Repeat your keystore password for confirmation:
+        // Please enter your mnemonic separated by spaces (" "). Note: you only need to enter the first 4 letters of each word if you'd prefer.: entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
+        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]:
+        // Please repeat the index to confirm: 0
+        // Please choose how many new validators you wish to run: 1
+        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'goerli', 'sepolia', 'zhejiang', 'holesky']:  [mainnet]: holesky
+        assert_eq!(
+            "9631e3c0eb64e2ee89341fef9a7323a9f657ee4a62d22a685c72c813cca561ede5446ff1ee58cb073fdd9bc5932d3bbe00bbfe28cd15c85fd044856e3360ebcc5b1b3b884c63ed25d3ebf444f76c103213bb1bc258e94c7325379ad4da412a8e",
             deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
         );
     }
