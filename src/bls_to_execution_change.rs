@@ -1,6 +1,7 @@
 use crate::{key_material, seed::get_eth2_seed, utils::get_withdrawal_credentials};
 use lazy_static::lazy_static;
 use regex::Regex;
+use ssz::Encode;
 use ssz_rs::prelude::*;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -23,10 +24,14 @@ lazy_static! {
     static ref CAPELLA_FORK_VERSION: Version =
         Vector::<u8, DOMAIN_TYPE_LEN>::deserialize(&[0x03, 0, 0, 0])
             .expect("failed to deserialize");
-    static ref GENESIS_VALIDATORS_ROOT: [u8; 32] =
+    static ref GENESIS_VALIDATORS_ROOT_MAINNET: [u8; 32] =
         "4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95".as_bytes()[0..32]
             .try_into()
             .expect("could not wrap genesis validators root");
+    static ref GENESIS_VALIDATORS_ROOT_HOLESKY: [u8; 32] =
+        "9143aa7c615a7f7115e2b6aac319c03529df8242ae705fba9df39b79c59fa8b1".as_bytes()[0..32]
+        .try_into()
+        .expect("could not wrap genesis validators root");
     // FIXME: use the real testnet genesis_validators_root
     static ref GENESIS_VALIDATORS_ROOT_STUB: [u8; 32] =
         "4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95".as_bytes()[0..32]
@@ -35,15 +40,19 @@ lazy_static! {
     static ref GENESIS_VALIDATOR_ROOT: HashMap<String, Node> = HashMap::from([
         (
             "mainnet".to_owned(),
-            Node::from_bytes(GENESIS_VALIDATORS_ROOT.to_owned())
+            Node::deserialize(GENESIS_VALIDATORS_ROOT_MAINNET.as_ssz_bytes().as_ref()).unwrap()
         ),
         (
             "prater".to_owned(),
-            Node::from_bytes(GENESIS_VALIDATORS_ROOT_STUB.to_owned())
+            Node::deserialize(GENESIS_VALIDATORS_ROOT_STUB.as_ssz_bytes().as_ref()).unwrap()
         ),
         (
             "goerli".to_owned(),
-            Node::from_bytes(GENESIS_VALIDATORS_ROOT_STUB.to_owned())
+            Node::deserialize(GENESIS_VALIDATORS_ROOT_STUB.as_ssz_bytes().as_ref()).unwrap()
+        ),
+        (
+            "holesky".to_owned(),
+            Node::deserialize(GENESIS_VALIDATORS_ROOT_HOLESKY.as_ssz_bytes().as_ref()).unwrap()
         ),
     ]);
 }
@@ -136,10 +145,12 @@ impl SignedBLSToExecutionChange {
         let signing_root = compute_signing_root(self.message.clone(), domain)
             .expect("could not compute signing root");
 
-        self.signature.verify(
-            &withdrawal_pubkey,
-            Hash256::from_slice(signing_root.as_bytes()),
-        );
+        let mut buffer = vec![];
+        signing_root
+            .serialize(&mut buffer)
+            .expect("Invalid domain computed");
+        self.signature
+            .verify(&withdrawal_pubkey, Hash256::from_slice(buffer.as_slice()));
     }
 
     pub fn export(&self) -> SignedBLSToExecutionChangeExport {
@@ -189,7 +200,7 @@ impl BLSToExecutionRequest {
             key_material::seed_to_key_material(&seed, 1, validator_start_index, None, true, None);
 
         let key_material = key_materials
-            .get(0)
+            .first()
             .expect("Error deriving key material from mnemonic");
 
         BLSToExecutionRequest {
@@ -293,7 +304,10 @@ pub fn compute_signing_root<T: SimpleSerialize>(
 /// based on https://github.com/ethereum/consensus-specs/blob/02b32100ed26c3c7a4a44f41b932437859487fd2/specs/phase0/beacon-chain.md#bls-signatures
 fn sign(secret_key: &[u8], msg: Node) -> Result<Signature, Box<dyn std::error::Error>> {
     let secret_key = SecretKey::deserialize(secret_key).expect("couldn't load the key");
-    let message = Hash256::from_slice(msg.as_bytes());
+    let mut buffer = vec![];
+    msg.serialize(&mut buffer)
+        .expect("Invalid signature computed");
+    let message = Hash256::from_slice(buffer.as_slice());
     Ok(secret_key.sign(message))
 }
 
