@@ -5,6 +5,15 @@
 # This option can be overridden via `--feature-depth` on the cmd line
 feature-depth = 1
 
+[advisories]
+
+ignore = [
+    # Only used in CLI, should be fixed by https://github.com/ChorusOne/eth-staking-smith/issues/30
+    "atty@0.2.14",
+    # Unmaintained, but only used in CLI
+    "ansi_term@0.12.1"
+]
+
 [licenses]
 # The lint level for crates which do not have a detectable license
 unlicensed = "allow"
