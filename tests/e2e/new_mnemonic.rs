@@ -2,7 +2,7 @@ use assert_cmd::prelude::*;
 use eth2_keystore::{json_keystore::JsonKeystore, Keystore};
 use eth_staking_smith::ValidatorExports;
 use predicates::prelude::*;
-use std::process::Command;
+use std::{path::PathBuf, process::Command};
 
 /*
     generate 1 validator with new mnemonic
@@ -49,7 +49,9 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
         .to_owned();
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    generated_deposit_data.validate();
+    generated_deposit_data.validate(
+        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
+    );
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -102,8 +104,10 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
     let generated_private_keys = generated_validator_json.private_keys;
     let generated_deposit_datas = generated_validator_json.deposit_data;
 
+    let spec = eth_staking_smith::chain_spec::chain_spec_for_network("goerli".to_string()).unwrap();
+
     for deposit_data in generated_deposit_datas {
-        deposit_data.validate();
+        deposit_data.validate(spec.clone());
     }
 
     for index in 0..generated_private_keys.len() {
@@ -171,7 +175,9 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
         .expect("could not get generated private key")
         .to_owned();
 
-    generated_deposit_data.validate();
+    generated_deposit_data.validate(
+        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
+    );
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -228,7 +234,71 @@ fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
         .expect("could not get generated private key")
         .to_owned();
 
-    generated_deposit_data.validate();
+    generated_deposit_data.validate(
+        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
+    );
+
+    // decrypt keystore with expected password to derive private key
+    let encoded_private_key = decrypt_generated_keystore(
+        generated_validator_json.keystores.get(0).unwrap(),
+        decryption_password,
+    );
+    assert_eq!(generated_private_key, &encoded_private_key);
+
+    Ok(())
+}
+
+/*
+    generate 1 validator overwriting withdrawal credentials with execution credentials
+*/
+#[test]
+fn test_new_custom_testnet_config() -> Result<(), Box<dyn std::error::Error>> {
+    let mut manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    manifest.push("tests/resources/minimal.yaml");
+    let testnet_config = manifest.to_str().unwrap();
+    let decryption_password = "testtest";
+    let num_validators = "3";
+    let execution_withdrawal_credentials =
+        "0x01000000000000000000000071c7656ec7ab88b098defb751b7401b5f6d8976f";
+
+    // run eth-staking-smith
+
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("new-mnemonic");
+    cmd.arg("--testnet_config");
+    cmd.arg(testnet_config);
+    cmd.arg("--keystore_password");
+    cmd.arg(decryption_password);
+    cmd.arg("--num_validators");
+    cmd.arg(num_validators);
+    cmd.arg("--withdrawal_credentials");
+    cmd.arg(execution_withdrawal_credentials);
+
+    cmd.assert().success();
+
+    // read generated output
+
+    let output = &cmd
+        .output()
+        .expect("could not get output from command")
+        .stdout;
+    let command_output = std::str::from_utf8(output).expect("could not parse output into string");
+    let generated_validator_json: ValidatorExports =
+        serde_json::from_str(command_output).expect("could not unmarshal command output");
+    let generated_private_key = generated_validator_json
+        .private_keys
+        .get(0)
+        .expect("could not get generated private key");
+    let generated_deposit_data = generated_validator_json
+        .deposit_data
+        .get(0)
+        .expect("could not get generated deposit data")
+        .to_owned();
+
+    generated_deposit_data.validate(
+        eth_staking_smith::chain_spec::chain_spec_from_file(testnet_config.to_string()).unwrap(),
+    );
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -286,7 +356,9 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
         .expect("could not get generated deposit data")
         .to_owned();
 
-    generated_deposit_data.validate();
+    generated_deposit_data.validate(
+        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
+    );
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -344,7 +416,9 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
         .to_owned();
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    generated_deposit_data.validate();
+    generated_deposit_data.validate(
+        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
+    );
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -405,7 +479,9 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
         .to_owned();
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    generated_deposit_data.validate();
+    generated_deposit_data.validate(
+        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
+    );
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(

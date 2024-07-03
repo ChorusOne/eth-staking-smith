@@ -52,6 +52,17 @@ Regenerate key and deposit data with existing mnemonic:
 ./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
 ```
 
+## Using custom testnet config
+
+Both `existing-mnemonic` and `new-mnemonic` commands support generating validators for custom testnets.
+To reference custom testnet config yaml file, pass `--testnet_config` parameter
+with that config as value, and omit `--chain` parameter:
+
+### Example command
+```
+./target/debug/eth-staking-smith new-mnemonic --testnet_config /etc/privatenet/config.yaml --keystore_password testtest --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
+```
+
 ## Converting your BLS 0x00 withdrawal address 
 
 Ethereum will be implementing a push-based approach for withdrawals, see [EIP-4895 docs](https://eips.ethereum.org/EIPS/eip-4895).
