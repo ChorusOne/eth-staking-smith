@@ -1,4 +1,5 @@
 pub mod bls_to_execution_change;
+pub mod chain_spec;
 pub mod cli;
 pub(crate) mod deposit;
 pub(crate) mod key_material;
