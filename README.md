@@ -71,6 +71,41 @@ You can use `eth-staking-smith` as follows to convert your address:
 
 Note that --validator-index and --validator-start-index are two distinct parameter, the former being index of validator on Beacon chain, and the latter is the index of validator private key derived from the seed
 
+## Exporting CLI standard output into common keystores folder format
+
+Most validator clients recognize the keystore folder format,
+produced by upstream Python deposit CLI. While `eth-staking-smith` outputs
+all validator data into standard output, allowing for better security in
+enterprise setups, for small and individual stakers this is not convenient,
+as they need to be able to import validator keys directly into validator client.
+
+To address such needs, `eth-staking-smith` provides convenience Python3 script
+to export JSON validator output into common keystore folder format. It should
+work on any box with Python 3.10+ installed.
+
+```
+mkdir validator_keys/
+./target/debug/eth-staking-smith new-mnemonic --chain holesky --num_validators 2 \
+  --keystore_password test > validator_secrets.json
+cat validator_secrets.json | python3 scripts/generate_keys_folder.py
+cat validator_secrets.json | jq .mnemonic.seed > mnemonic.txt
+rm validator_secrets.json
+echo "MAKE SURE TO BACK UP mnemonic.text IN THE SAFE PLACE"
+
+ls validator_keys/
+deposit_data-1720014619.json  keystore-m_12381_3600_0_0_0-1720014619.json  keystore-m_12381_3600_1_0_0-1720014619.json
+```
+
+The contents of `validator_keys/` folder might be imported into most
+validator clients, for example Lighthouse import command will look like that:
+
+```
+echo "test" > ./password.txt
+lighthouse account validator import \
+  --network holesky --reuse-password
+  --directory validator_keys/ --password-file ./password.txt
+```
+
 ### Command to send SignedBLSToExecutionChange request to Beacon node
 
 ```
