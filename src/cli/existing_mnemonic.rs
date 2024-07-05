@@ -32,9 +32,9 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .arg(
             Arg::with_name("chain")
                 .long("chain")
-                .required(false)
+                .required(true)
                 .takes_value(true)
-                .possible_values(&["goerli", "prater", "mainnet", "holesky"])
+                .possible_values(&["goerli", "prater", "mainnet", "minimal", "holesky"])
                 .help(
                     r#"The name of Ethereum PoS chain you are
                 targeting. Use "mainnet" if you are
@@ -93,13 +93,6 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                     and consequently slower performance vs `pbkdf2` achieving better performance with lower security parameters compared to `scrypt`",
                 ),
         )
-        .arg(
-            Arg::with_name("testnet_config")
-                .long("testnet_config")
-                .required(false)
-                .takes_value(true)
-                .help("Path to a custom Eth PoS chain config")
-        )
 }
 
 #[allow(clippy::needless_lifetimes)]
@@ -112,26 +105,9 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
         .parse::<u32>()
         .expect("invalid number of validators");
 
-    let chain = sub_match.value_of("chain");
-
-    let chain_spec_file = match chain {
-        Some(_) => None,
-        None => Some(
-            sub_match
-                .value_of("testnet_config")
-                .expect("must pass testnet config path if not using chain")
-                .to_string(),
-        ),
-    };
-
-    let chain = if chain_spec_file.is_some() && chain.is_some() {
-        panic!("should only pass one of testnet_config or chain")
-    } else if chain_spec_file.is_some() {
-        // Placeholder value
-        ""
-    } else {
-        chain.unwrap()
-    };
+    let chain = sub_match
+        .value_of("chain")
+        .expect("missing chain identifier");
 
     let keystore_password = sub_match.value_of("keystore_password");
 
@@ -157,7 +133,7 @@ pub fn run<'a>(sub_match: &ArgMatches<'a>) {
             withdrawal_credentials,
             32_000_000_000,
             "2.3.0".to_string(),
-            chain_spec_file,
+            None,
         )
         .unwrap()
         .try_into()

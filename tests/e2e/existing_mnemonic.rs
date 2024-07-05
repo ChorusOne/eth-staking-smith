@@ -693,57 +693,6 @@ fn test_omitting_keystore_password() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /*
-    custom testnet config
-*/
-#[test]
-fn test_existing_custom_testnet_config() -> Result<(), Box<dyn std::error::Error>> {
-    let mut manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest.push("tests/resources/minimal.yaml");
-    let testnet_config = manifest.to_str().unwrap();
-    let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
-    let num_validators = "1";
-    let execution_withdrawal_credentials =
-        "0x01000000000000000000000071c7656ec7ab88b098defb751b7401b5f6d8976f";
-
-    // run eth-staking-smith
-
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
-
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--testnet_config");
-    cmd.arg(testnet_config);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--withdrawal_credentials");
-    cmd.arg(execution_withdrawal_credentials);
-
-    cmd.assert().success();
-
-    // read generated output
-
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports =
-        serde_json::from_str(command_output).expect("could not unmarshal command output");
-
-    let generated_private_key = generated_validator_json
-        .private_keys
-        .first()
-        .unwrap()
-        .clone();
-    let first_deposit_item = generated_validator_json.deposit_data.first().unwrap();
-    let generated_fork_version = first_deposit_item.fork_version.clone();
-    assert_eq!(
-        generated_private_key,
-        "65bee7f836609f83f2fac858208595c97eb69732ac66317d638713651dd7572a"
-    );
-    assert_eq!(generated_fork_version, "00000001");
-    Ok(())
-}
-
-/*
     attempt to generate validator with wrong mnemonic format
 */
 #[test]

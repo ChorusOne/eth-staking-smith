@@ -23,7 +23,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .long("chain")
                 .required(true)
                 .takes_value(true)
-                .possible_values(&["goerli", "prater", "mainnet", "holesky"])
+                .possible_values(&["goerli", "prater", "mainnet", "minimal", "holesky"])
                 .help(
                     r#"The name of Ethereum PoS chain you are
                 targeting. Use "mainnet" if you are
