@@ -1,0 +1,89 @@
+name: Cross-Platform Release Build
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - { triple: x86_64-unknown-linux-gnu, suffix: linux_amd64, file: eth-staking-smith }
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev perl make gcc llvm-dev libclang-11-dev clang-11
+
+      - name: Set up llvm-config
+        run: |
+          sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-11 100
+
+
+      - name: Add rustup target
+        run: rustup target add ${{ matrix.target.triple }}
+
+      - name: Build for ${{ matrix.target.triple }}
+        run: cargo build --target ${{ matrix.target.triple }} --release
+
+      - name: Create archive
+        run: |
+          mkdir -p dist
+          tar -czvf dist/${{ matrix.target.file }}_${{ github.event.release.tag_name }}_${{ matrix.target.suffix }}.tar.gz -C target/${{ matrix.target.triple }}/release ${{ matrix.target.file }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ matrix.target.file }}_${{ github.event.release.tag_name }}_${{ matrix.target.suffix }}.tar.gz
+          asset_name: ${{ matrix.target.file }}_${{ github.event.release.tag_name }}_${{ matrix.target.suffix }}.tar.gz
+          asset_content_type: application/octet-stream
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target:
+          - { triple: x86_64-apple-darwin, suffix: darwin_amd64, file: eth-staking-smith }
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Add rustup target
+        run: rustup target add ${{ matrix.target.triple }}
+
+      - name: Build for ${{ matrix.target.triple }}
+        run: cargo build --target ${{ matrix.target.triple }} --release
+
+      - name: Create archive
+        run: |
+          mkdir -p dist
+          tar -czvf dist/${{ matrix.target.file }}_${{ github.event.release.tag_name }}_${{ matrix.target.suffix }}.tar.gz -C target/${{ matrix.target.triple }}/release ${{ matrix.target.file }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ matrix.target.file }}_${{ github.event.release.tag_name }}_${{ matrix.target.suffix }}.tar.gz
+          asset_name: ${{ matrix.target.file }}_${{ github.event.release.tag_name }}_${{ matrix.target.suffix }}.tar.gz
+          asset_content_type: application/octet-stream
