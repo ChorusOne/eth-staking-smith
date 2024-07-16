@@ -303,7 +303,7 @@ mod test {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
         let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
         let mut manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        manifest.push("tests/resources/testnet.yaml");
+        manifest.push("tests/resources/helder-testnet.yaml");
         let key_material = VotingKeyMaterial {
             keystore: Some(keystore.clone()),
             keypair: keypair.clone(),
