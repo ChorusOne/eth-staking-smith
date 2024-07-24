@@ -1,9 +1,10 @@
 use eth2_keystore::keypair_from_secret;
-use eth2_network_config::Eth2NetworkConfig;
-use std::path::Path;
-use types::{ChainSpec, Config, DepositData, Hash256, MainnetEthSpec, MinimalEthSpec, Signature};
+use types::{ChainSpec, DepositData, Hash256, Signature};
 
-use crate::key_material::VotingKeyMaterial;
+use crate::{
+    chain_spec::{chain_spec_for_network, chain_spec_from_file},
+    key_material::VotingKeyMaterial,
+};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DepositError {
@@ -42,36 +43,12 @@ pub(crate) fn keystore_to_deposit(
     };
 
     let network_str = network.as_str();
-    let spec;
-
-    if ["goerli", "prater", "mainnet", "holesky"].contains(&network_str) {
-        spec = Eth2NetworkConfig::constant(network_str)
-            .unwrap()
-            .unwrap()
-            .chain_spec::<MainnetEthSpec>()
-            .unwrap();
-    } else if network_str == "minimal" {
-        if chain_spec_file.is_none() {
-            return Err(DepositError::NoCustomConfig(
-                "Custom config for minimal network must be provided".to_string(),
-            ));
-        }
-        spec = match Config::from_file(Path::new(chain_spec_file.unwrap().as_str())) {
-            Ok(cfg) => cfg
-                .apply_to_chain_spec::<MinimalEthSpec>(&ChainSpec::minimal())
-                .unwrap(),
-            Err(e) => {
-                log::debug!("Unable to load chain spec config: {:?}", e);
-                return Err(DepositError::NoCustomConfig(
-                    "Can not parse config file for minimal network".to_string(),
-                ));
-            }
-        }
+    let spec = if network_str.is_empty() {
+        // Empty network name means custom config file is used
+        chain_spec_from_file(chain_spec_file.unwrap())?
     } else {
-        return Err(DepositError::InvalidNetworkName(
-            "Unknown network name passed".to_string(),
-        ));
-    }
+        chain_spec_for_network(network_str.to_string())?
+    };
 
     let credentials_hash = Hash256::from_slice(withdrawal_credentials);
 
@@ -100,7 +77,6 @@ pub(crate) fn keystore_to_deposit(
 mod test {
 
     use eth2_keystore::{Keystore, PlainText};
-    use hex;
     use pretty_assertions::assert_eq;
     use types::PublicKey;
 
@@ -323,11 +299,11 @@ mod test {
     }
 
     #[test]
-    fn test_deposit_minimal() {
+    fn test_deposit_custom_testnet() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
         let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
         let mut manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        manifest.push("tests/resources/testnet.yaml");
+        manifest.push("tests/resources/helder-testnet.yaml");
         let key_material = VotingKeyMaterial {
             keystore: Some(keystore.clone()),
             keypair: keypair.clone(),
@@ -339,8 +315,43 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            "minimal".to_string(),
-            Some(manifest.to_str().unwrap().to_string()),
+            "".to_string(),
+            Some(manifest.to_str().unwrap().to_owned()),
+        )
+        .unwrap();
+
+        // Signature asserted here is generated with
+        // python ./staking_deposit/deposit.py existing-mnemonic --keystore_password test
+
+        // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
+        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
+        // Please choose how many new validators you wish to run: 1
+        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
+        assert_eq!(
+            "974ab2ce579f12339bb3125311a4d69f50e8d40546d086629f8f9af31ef7ee1fd0400b40d1884f7f0487b17069054b6305eb8321e883a5110e7e67864da44e4e15efbed5ff752a1a93bada4f53cdd033d8884233925546e28b16991d44307d8d",
+            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_deposit_custom_minimal_testnet() {
+        let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let mut manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        manifest.push("tests/resources/minimal.yaml");
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair: keypair.clone(),
+            voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
+            withdrawal_keypair: None,
+        };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
+        let (deposit_data, _) = keystore_to_deposit(
+            &key_material,
+            &withdrawal_creds.as_slice(),
+            32_000_000_000,
+            "".to_string(),
+            Some(manifest.to_str().unwrap().to_owned()),
         )
         .unwrap();
 
