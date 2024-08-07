@@ -1,21 +1,31 @@
-use clap::App;
+#![forbid(unsafe_code)]
+use clap::{Parser, Subcommand};
 use eth_staking_smith::cli::{bls_to_execution_change, existing_mnemonic, new_mnemonic};
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Opts {
+    #[command(subcommand)]
+    subcommand: SubCommands,
+}
+
+#[derive(Subcommand)]
+enum SubCommands {
+    /// Generates a SignedBLSToExecutionChange object which can be sent
+    /// to the Beacon Node to change the withdrawal address from BLS to an execution address
+    BlsToExecutionChange(bls_to_execution_change::BlsToExecutionChangeSubcommandOpts),
+    ExistingMnemonic(existing_mnemonic::ExistingMnemonicSubcommandOpts),
+    NewMnemonic(new_mnemonic::NewMnemonicSubcommandOpts),
+}
 
 fn main() {
     env_logger::init();
-    let matches = App::new(env!("CARGO_PKG_NAME"))
-        .version(env!("CARGO_PKG_VERSION"))
-        .author(&*format!("Chorus one <{}>", env!("CARGO_PKG_AUTHORS")))
-        .about(env!("CARGO_PKG_DESCRIPTION"))
-        .subcommand(new_mnemonic::subcommand())
-        .subcommand(existing_mnemonic::subcommand())
-        .subcommand(bls_to_execution_change::subcommand())
-        .get_matches();
 
-    match matches.subcommand() {
-        ("new-mnemonic", Some(sub_match)) => new_mnemonic::run(sub_match),
-        ("existing-mnemonic", Some(sub_match)) => existing_mnemonic::run(sub_match),
-        ("bls-to-execution-change", Some(sub_match)) => bls_to_execution_change::run(sub_match),
-        _ => println!("{}", matches.usage()),
+    let opts = Opts::parse();
+    match opts.subcommand {
+        // Server
+        SubCommands::BlsToExecutionChange(sub) => sub.run(),
+        SubCommands::ExistingMnemonic(sub) => sub.run(),
+        SubCommands::NewMnemonic(sub) => sub.run(),
     }
 }

@@ -17,33 +17,45 @@ pub struct VotingKeyMaterial {
     pub withdrawal_keypair: Option<Keypair>,
 }
 
+/// Key derivation function for the keystore
+#[derive(clap::ValueEnum, Clone)]
+pub enum KdfVariant {
+    Scrypt,
+    Pbkdf2,
+}
+
+impl From<KdfVariant> for Kdf {
+    fn from(value: KdfVariant) -> Self {
+        match value {
+            KdfVariant::Scrypt => scrypt(),
+            KdfVariant::Pbkdf2 => pbkdf2(),
+        }
+    }
+}
+
 /// Given eth2 wallet seed, create N key material wrappers,
 /// with voting secret and keystore encrypted with password.
 pub(crate) fn seed_to_key_material(
     seed: &Bip39Seed,
     n: u32,
     start_index: u32,
-    password: Option<&[u8]>,
+    password: Option<Vec<u8>>,
     derive_withdrawal: bool,
-    kdf: Option<&str>,
+    kdf: Option<Kdf>,
 ) -> Vec<VotingKeyMaterial> {
-    let kdf_func: Kdf = match kdf.unwrap_or("pbkdf2") {
-        "scrypt" => scrypt(),
-        "pbkdf2" => pbkdf2(),
-        _ => panic!("Unsupported kdf function"),
-    };
+    let kdf = kdf.unwrap_or(pbkdf2());
     (start_index..start_index + n)
         .map(|idx| {
             let master = DerivedKey::from_seed(seed.as_bytes()).expect("Invalid seed is provided");
             let (voting_path, voting_secret, keypair) =
                 derive_keypair(master, idx, KeyType::Voting);
-            let keystore = password.map(|pass| {
+            let keystore = password.clone().map(|pass| {
                 if pass.len() < 8 {
                     panic!("The password length should be at least 8");
                 }
-                KeystoreBuilder::new(&keypair, pass, format!("{}", voting_path))
+                KeystoreBuilder::new(&keypair, pass.as_slice(), format!("{}", voting_path))
                     .expect("Can not create KeystoreBuilder from provided seed")
-                    .kdf(kdf_func.clone())
+                    .kdf(kdf.clone())
                     .build()
                     .expect("Failed to build keystore")
             });
@@ -82,7 +94,7 @@ fn derive_keypair(
 #[cfg(test)]
 mod test {
 
-    use crate::utils;
+    use crate::utils::{self, pbkdf2, scrypt};
 
     use super::seed_to_key_material;
     use ::bip39::{Language, Mnemonic, Seed};
@@ -119,8 +131,14 @@ mod test {
     #[test]
     fn test_seed_to_keystore() {
         let seed = seed_from_mnemonic();
-        let keystores =
-            seed_to_key_material(&seed, 3, 0, Some(VOTING_KEYSTORE_PASSWORD), false, None);
+        let keystores = seed_to_key_material(
+            &seed,
+            3,
+            0,
+            Some(VOTING_KEYSTORE_PASSWORD.to_vec()),
+            false,
+            None,
+        );
 
         assert_eq!(keystores.len(), 3);
 
@@ -166,8 +184,14 @@ mod test {
     #[test]
     fn test_seed_to_keystore_derive_withdrawal_key() {
         let seed = seed_from_mnemonic();
-        let keystores =
-            seed_to_key_material(&seed, 3, 0, Some(VOTING_KEYSTORE_PASSWORD), true, None);
+        let keystores = seed_to_key_material(
+            &seed,
+            3,
+            0,
+            Some(VOTING_KEYSTORE_PASSWORD.to_vec()),
+            true,
+            None,
+        );
 
         assert_eq!(keystores.len(), 3);
 
@@ -228,8 +252,14 @@ mod test {
     fn test_seed_to_keystore_start_index() {
         let seed = seed_from_mnemonic();
 
-        let keystores =
-            seed_to_key_material(&seed, 2, 1, Some(VOTING_KEYSTORE_PASSWORD), true, None);
+        let keystores = seed_to_key_material(
+            &seed,
+            2,
+            1,
+            Some(VOTING_KEYSTORE_PASSWORD.to_vec()),
+            true,
+            None,
+        );
 
         assert_eq!(keystores.len(), 2);
 
@@ -275,9 +305,9 @@ mod test {
             &seed,
             3,
             0,
-            Some(VOTING_KEYSTORE_PASSWORD),
+            Some(VOTING_KEYSTORE_PASSWORD.to_vec()),
             false,
-            Some("scrypt"),
+            Some(scrypt()),
         );
 
         assert_eq!(keystores.len(), 3);
@@ -328,9 +358,9 @@ mod test {
             &seed,
             3,
             0,
-            Some(VOTING_KEYSTORE_PASSWORD),
+            Some(VOTING_KEYSTORE_PASSWORD.to_vec()),
             false,
-            Some("pbkdf2"),
+            Some(pbkdf2()),
         );
 
         assert_eq!(keystores.len(), 3);

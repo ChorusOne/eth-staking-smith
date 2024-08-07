@@ -1,4 +1,7 @@
-use crate::{key_material, seed::get_eth2_seed, utils::get_withdrawal_credentials};
+use crate::{
+    key_material, networks::SupportedNetworks, seed::get_eth2_seed,
+    utils::get_withdrawal_credentials,
+};
 use lazy_static::lazy_static;
 use regex::Regex;
 use ssz::Encode;
@@ -37,21 +40,21 @@ lazy_static! {
         "4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95".as_bytes()[0..32]
             .try_into()
             .expect("could not wrap genesis validators root");
-    static ref GENESIS_VALIDATOR_ROOT: HashMap<String, Node> = HashMap::from([
+    static ref GENESIS_VALIDATOR_ROOT: HashMap<SupportedNetworks, Node> = HashMap::from([
         (
-            "mainnet".to_owned(),
+            SupportedNetworks::Mainnet,
             Node::deserialize(GENESIS_VALIDATORS_ROOT_MAINNET.as_ssz_bytes().as_ref()).unwrap()
         ),
         (
-            "prater".to_owned(),
+            SupportedNetworks::Prater,
             Node::deserialize(GENESIS_VALIDATORS_ROOT_STUB.as_ssz_bytes().as_ref()).unwrap()
         ),
         (
-            "goerli".to_owned(),
+            SupportedNetworks::Goerli,
             Node::deserialize(GENESIS_VALIDATORS_ROOT_STUB.as_ssz_bytes().as_ref()).unwrap()
         ),
         (
-            "holesky".to_owned(),
+            SupportedNetworks::Holesky,
             Node::deserialize(GENESIS_VALIDATORS_ROOT_HOLESKY.as_ssz_bytes().as_ref()).unwrap()
         ),
     ]);
@@ -107,7 +110,7 @@ impl SignedBLSToExecutionChange {
         self,
         from_bls_withdrawal_credentials: &str,
         to_execution_address: &str,
-        network: &str,
+        network: SupportedNetworks,
     ) {
         // execution address is same as input
         let execution_address = std::str::from_utf8(&self.message.to_execution_address).unwrap();
@@ -128,8 +131,15 @@ impl SignedBLSToExecutionChange {
 
         // verify signature
 
-        let genesis_validator_root = if ["goerli", "prater", "mainnet"].contains(&network) {
-            let genesis_validator_root = GENESIS_VALIDATOR_ROOT.get(network).unwrap();
+        let genesis_validator_root = if [
+            SupportedNetworks::Goerli,
+            SupportedNetworks::Mainnet,
+            SupportedNetworks::Holesky,
+            SupportedNetworks::Prater,
+        ]
+        .contains(&network)
+        {
+            let genesis_validator_root = GENESIS_VALIDATOR_ROOT.get(&network).unwrap();
             genesis_validator_root
         } else {
             panic!("Unknown network name passed");
@@ -213,7 +223,7 @@ impl BLSToExecutionRequest {
         }
     }
 
-    pub fn sign(self, network: &str) -> SignedBLSToExecutionChange {
+    pub fn sign(self, network: SupportedNetworks) -> SignedBLSToExecutionChange {
         let withdrawal_pubkey = Vector::<u8, BLS_PUBKEY_LEN>::deserialize(
             self.bls_keys
                 .pk
@@ -242,10 +252,17 @@ impl BLSToExecutionRequest {
 fn generate_signed_bls_to_execution_change(
     message: BLSToExecutionChange,
     secret_key: &[u8],
-    network: &str,
+    network: SupportedNetworks,
 ) -> Result<SignedBLSToExecutionChange, Box<dyn std::error::Error>> {
-    let genesis_validator_root = if ["goerli", "prater", "mainnet"].contains(&network) {
-        let genesis_validator_root = GENESIS_VALIDATOR_ROOT.get(network).unwrap();
+    let genesis_validator_root = if [
+        SupportedNetworks::Goerli,
+        SupportedNetworks::Mainnet,
+        SupportedNetworks::Holesky,
+        SupportedNetworks::Prater,
+    ]
+    .contains(&network)
+    {
+        let genesis_validator_root = GENESIS_VALIDATOR_ROOT.get(&network).unwrap();
         genesis_validator_root
     } else {
         panic!("Unknown network name passed");
@@ -317,7 +334,7 @@ mod test {
 
     use types::{Hash256, PublicKey};
 
-    use crate::utils;
+    use crate::{networks::SupportedNetworks, utils};
 
     use super::BLSToExecutionRequest;
 
@@ -342,7 +359,9 @@ mod test {
 
         let bls_to_execution_change =
             BLSToExecutionRequest::new(PHRASE.as_bytes(), 0, 100, EXECUTION_WITHDRAWAL_ADDRESS);
-        let signed_bls_to_execution_change = bls_to_execution_change.clone().sign("mainnet");
+        let signed_bls_to_execution_change = bls_to_execution_change
+            .clone()
+            .sign(SupportedNetworks::Mainnet);
 
         // format generated fields for assertion
         let to_execution_address =

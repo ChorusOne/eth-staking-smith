@@ -1,11 +1,13 @@
 use std::str::FromStr;
 
 use crate::deposit::{keystore_to_deposit, DepositError};
-use crate::key_material::{seed_to_key_material, VotingKeyMaterial};
+use crate::key_material::{seed_to_key_material, KdfVariant, VotingKeyMaterial};
+use crate::networks::SupportedNetworks;
 use crate::seed::get_eth2_seed;
 use crate::utils::get_withdrawal_credentials;
 use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
+use eth2_wallet::json_wallet::Kdf;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tree_hash::TreeHash;
@@ -124,11 +126,11 @@ impl Validators {
     /// Initernal function to initialize key material from seed.
     fn key_material_from_seed(
         seed: &Bip39Seed,
-        password: Option<&[u8]>,
+        password: Option<Vec<u8>>,
         num_validators: Option<u32>,
         validator_start_index: Option<u32>,
         derive_withdrawal: bool,
-        kdf: Option<&str>,
+        kdf: Option<Kdf>,
     ) -> Vec<VotingKeyMaterial> {
         let mut key_material = vec![];
         for voting_keystore in seed_to_key_material(
@@ -147,11 +149,11 @@ impl Validators {
     /// Initialize seed from mnemonic bytes
     pub fn new(
         mnemonic_phrase: Option<&[u8]>,
-        password: Option<&[u8]>,
+        password: Option<Vec<u8>>,
         num_validators: Option<u32>,
         validator_start_index: Option<u32>,
         derive_withdrawal: bool,
-        kdf: Option<&str>,
+        kdf: Option<KdfVariant>,
     ) -> Self {
         let (seed, phrase_string) = get_eth2_seed(mnemonic_phrase);
 
@@ -163,7 +165,7 @@ impl Validators {
                 num_validators,
                 validator_start_index,
                 derive_withdrawal,
-                kdf,
+                kdf.map(|k| k.into()),
             ),
         }
     }
@@ -171,11 +173,11 @@ impl Validators {
     /// Initialize seed from mnemonic object
     pub fn from_mnemonic(
         mnemonic: &Mnemonic,
-        password: Option<&[u8]>,
+        password: Option<Vec<u8>>,
         num_validators: Option<u32>,
         validator_start_index: Option<u32>,
         derive_withdrawal: bool,
-        kdf: Option<&str>,
+        kdf: Option<KdfVariant>,
     ) -> Self {
         let mnemonic_phrase = mnemonic.clone().into_phrase();
         let (seed, _) = get_eth2_seed(Some(mnemonic.clone().into_phrase().as_bytes()));
@@ -187,7 +189,7 @@ impl Validators {
                 num_validators,
                 validator_start_index,
                 derive_withdrawal,
-                kdf,
+                kdf.map(|k| k.into()),
             ),
         }
     }
@@ -226,8 +228,8 @@ impl Validators {
     /// }
     pub fn export(
         &self,
-        network: String,
-        withdrawal_credentials: Option<&str>,
+        network: Option<SupportedNetworks>,
+        withdrawal_credentials: Option<String>,
         deposit_amount_gwei: u64,
         deposit_cli_version: String,
         chain_spec_file: Option<String>,
@@ -235,6 +237,9 @@ impl Validators {
         let mut keystores: Vec<Keystore> = vec![];
         let mut private_keys: Vec<String> = vec![];
         let mut deposit_data: Vec<DepositExport> = vec![];
+        let network_name = network
+            .clone()
+            .map_or("privatenet".to_string(), |n| n.to_string());
 
         for key_with_store in self.key_material.iter() {
             if let Some(ks) = key_with_store.keystore.clone() {
@@ -244,7 +249,7 @@ impl Validators {
             private_keys.push(hex::encode(key_with_store.voting_secret.as_bytes()));
 
             let withdrawal_credentials = set_withdrawal_credentials(
-                withdrawal_credentials,
+                withdrawal_credentials.clone(),
                 key_with_store.withdrawal_keypair.clone(),
             )?;
 
@@ -271,7 +276,7 @@ impl Validators {
                 deposit_message_root: hex::encode(deposit.as_deposit_message().tree_hash_root()),
                 deposit_data_root: hex::encode(deposit.tree_hash_root()),
                 fork_version: hex::encode(chain_spec.genesis_fork_version),
-                network_name: network.clone(),
+                network_name: network_name.clone(),
                 deposit_cli_version: deposit_cli_version.clone(),
             })
         }
@@ -288,7 +293,7 @@ impl Validators {
 }
 
 fn set_withdrawal_credentials(
-    existing_withdrawal_credentials: Option<&str>,
+    existing_withdrawal_credentials: Option<String>,
     derived_withdrawal_credentials: Option<Keypair>,
 ) -> Result<Vec<u8>, DepositError> {
     let withdrawal_credentials = match existing_withdrawal_credentials {
@@ -298,12 +303,14 @@ fn set_withdrawal_credentials(
                 Regex::new(r"^(0x01[0]{22}[a-fA-F0-9]{40})$").unwrap();
             let bls_creds_regex: Regex = Regex::new(r"^(0x00[a-fA-F0-9]{62})$").unwrap();
 
-            let withdrawal_credentials = if execution_addr_regex.is_match(creds) {
+            let withdrawal_credentials = if execution_addr_regex.is_match(creds.as_str()) {
                 // see format of execution address: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#eth1_address_withdrawal_prefix
                 let mut formatted_creds = ETH1_CREDENTIALS_PREFIX.to_vec();
                 formatted_creds.extend_from_slice(&creds.as_bytes()[2..]);
                 formatted_creds
-            } else if execution_creds_regex.is_match(creds) || bls_creds_regex.is_match(creds) {
+            } else if execution_creds_regex.is_match(creds.as_str())
+                || bls_creds_regex.is_match(creds.as_str())
+            {
                 // see format of execution & bls credentials https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#bls_withdrawal_prefix
                 let formatted_creds = creds.as_bytes()[2..].to_vec();
                 formatted_creds
@@ -336,6 +343,8 @@ fn set_withdrawal_credentials(
 mod test {
 
     use crate::{
+        key_material::KdfVariant,
+        networks::SupportedNetworks,
         validators::{set_withdrawal_credentials, ValidatorExports},
         DepositExport,
     };
@@ -351,7 +360,7 @@ mod test {
         fn validators_with_mnemonic() -> Validators {
             Validators::new(
                 Some(PHRASE.as_bytes()),
-                Some("testtest".as_bytes()),
+                Some("testtest".as_bytes().to_vec()),
                 Some(1),
                 Some(0),
                 false,
@@ -362,8 +371,8 @@ mod test {
         let exports = vec![
             validators_with_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -371,8 +380,8 @@ mod test {
                 .unwrap(),
             validators_with_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -410,19 +419,19 @@ mod test {
         fn validators_with_mnemonic() -> Validators {
             Validators::new(
                 Some(PHRASE.as_bytes()),
-                Some("testtest".as_bytes()),
+                Some("testtest".as_bytes().to_vec()),
                 Some(1),
                 Some(0),
                 false,
-                Some("scrypt"),
+                Some(KdfVariant::Scrypt),
             )
         }
 
         let exports = vec![
             validators_with_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -430,8 +439,8 @@ mod test {
                 .unwrap(),
             validators_with_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -469,7 +478,7 @@ mod test {
         fn validators_new_mnemonic() -> Validators {
             Validators::new(
                 None,
-                Some("testtest".as_bytes()),
+                Some("testtest".as_bytes().to_vec()),
                 Some(1),
                 Some(0),
                 false,
@@ -480,8 +489,8 @@ mod test {
         let exports: Vec<ValidatorExports> = vec![
             validators_new_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -489,8 +498,8 @@ mod test {
                 .unwrap(),
             validators_new_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -520,19 +529,19 @@ mod test {
         fn validators_new_mnemonic() -> Validators {
             Validators::new(
                 None,
-                Some("testtest".as_bytes()),
+                Some("testtest".as_bytes().to_vec()),
                 Some(1),
                 Some(0),
                 false,
-                Some("scrypt"),
+                Some(KdfVariant::Scrypt),
             )
         }
 
         let exports: Vec<ValidatorExports> = vec![
             validators_new_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -540,8 +549,8 @@ mod test {
                 .unwrap(),
             validators_new_mnemonic()
                 .export(
-                    "mainnet".to_string(),
-                    Some("0x0000000000000000000000000000000000000001"),
+                    Some(SupportedNetworks::Mainnet),
+                    Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
                     "2.3.0".to_string(),
                     None,
@@ -570,7 +579,7 @@ mod test {
     fn test_export_validators_no_withdrawal_credentials() {
         let validators = Validators::new(
             Some(PHRASE.as_bytes()),
-            Some("testtest".as_bytes()),
+            Some("testtest".as_bytes().to_vec()),
             Some(1),
             Some(0),
             true,
@@ -579,7 +588,7 @@ mod test {
 
         let export = validators
             .export(
-                "mainnet".to_string(),
+                Some(SupportedNetworks::Mainnet),
                 None,
                 32_000_000_000,
                 "2.3.0".to_string(),
@@ -607,22 +616,26 @@ mod test {
     #[test]
     fn set_withdrawal_credentials_wrong_execution_format() {
         // should be 0xD4BB555d3B0D7fF17c606161B44E372689C14F4B
-        let response =
-            set_withdrawal_credentials(Some("0x01D4BB555d3B0D7fF17c606161B44E372689C14F4B"), None);
+        let response = set_withdrawal_credentials(
+            Some("0x01D4BB555d3B0D7fF17c606161B44E372689C14F4B".to_string()),
+            None,
+        );
         assert!(response.is_err());
     }
 
     #[test]
     fn set_withdrawal_credentials_valid_execution_address() {
-        let response =
-            set_withdrawal_credentials(Some("0xD4BB555d3B0D7fF17c606161B44E372689C14F4B"), None);
+        let response = set_withdrawal_credentials(
+            Some("0xD4BB555d3B0D7fF17c606161B44E372689C14F4B".to_string()),
+            None,
+        );
         assert!(response.is_ok());
     }
 
     #[test]
     fn set_withdrawal_credentials_valid_execution_credentials() {
         let response = set_withdrawal_credentials(
-            Some("0x0100000000000000000000000000000000000000000000000000000000000001"),
+            Some("0x0100000000000000000000000000000000000000000000000000000000000001".to_string()),
             None,
         );
 
@@ -633,7 +646,7 @@ mod test {
     fn set_withdrawal_credentials_wrong_bls_format() {
         // should be 0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d
         let response = set_withdrawal_credentials(
-            Some("0x45b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d"),
+            Some("0x45b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d".to_string()),
             None,
         );
         assert!(response.is_err());
@@ -642,7 +655,7 @@ mod test {
     #[test]
     fn set_withdrawal_credentials_valid_bls_format() {
         let response = set_withdrawal_credentials(
-            Some("0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d"),
+            Some("0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d".to_string()),
             None,
         );
         assert!(response.is_ok());
