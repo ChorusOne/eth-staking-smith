@@ -374,7 +374,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -383,7 +383,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -399,7 +399,7 @@ mod test {
         "deposit_data_root": "f5c6b52d2ba608f0df4123e5ed051b5765a636e09d1372668e1ec074430f2279",
         "fork_version": "00000000",
         "network_name": "mainnet",
-        "deposit_cli_version": "2.3.0"
+        "deposit_cli_version": "2.7.0"
     }
   ]"#).unwrap();
 
@@ -433,7 +433,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -442,7 +442,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -458,7 +458,7 @@ mod test {
         "deposit_data_root": "f5c6b52d2ba608f0df4123e5ed051b5765a636e09d1372668e1ec074430f2279",
         "fork_version": "00000000",
         "network_name": "mainnet",
-        "deposit_cli_version": "2.3.0"
+        "deposit_cli_version": "2.7.0"
     }
   ]"#).unwrap();
 
@@ -492,7 +492,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -501,7 +501,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -543,7 +543,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -552,7 +552,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
-                    "2.3.0".to_string(),
+                    "2.7.0".to_string(),
                     None,
                 )
                 .unwrap(),
@@ -591,7 +591,7 @@ mod test {
                 Some(SupportedNetworks::Mainnet),
                 None,
                 32_000_000_000,
-                "2.3.0".to_string(),
+                "2.7.0".to_string(),
                 None,
             )
             .unwrap();
@@ -606,7 +606,7 @@ mod test {
       "deposit_data_root": "270169ee3da4da7566daa4a29727b893bb1c6ce2f26b6c861afe6d480b3f9a7d",
       "fork_version": "00000000",
       "network_name": "mainnet",
-      "deposit_cli_version": "2.3.0"
+      "deposit_cli_version": "2.7.0"
     }
   ]"#).unwrap();
 
