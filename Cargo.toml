@@ -14,12 +14,12 @@ path = "src/lib.rs"
 
 [dependencies]
 clap = { version = "^4.5", features = ["derive"] }
-ethereum_hashing = "0.6.0"
-eth2_key_derivation = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d"}
-eth2_keystore = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d"}
-eth2_network_config = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d" }
-ethereum_ssz = "0.5.3"
-eth2_wallet = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d"}
+ethereum_hashing = "0.7.0"
+eth2_key_derivation = { git = "https://github.com/ChorusOne/lighthouse", rev = "d6ba8c397557f5c977b70f0d822a9228e98ca214"}
+eth2_keystore = { git = "https://github.com/ChorusOne/lighthouse", rev = "d6ba8c397557f5c977b70f0d822a9228e98ca214"}
+eth2_network_config = { git = "https://github.com/ChorusOne/lighthouse", rev = "d6ba8c397557f5c977b70f0d822a9228e98ca214" }
+ethereum_ssz = "0.5.4"
+eth2_wallet = { git = "https://github.com/ChorusOne/lighthouse", rev = "d6ba8c397557f5c977b70f0d822a9228e98ca214"}
 ethereum-types = { version = "0.14.1", optional = true }
 env_logger = "^0.11"
 hex = "0.4"
@@ -34,8 +34,8 @@ ssz_rs = { git = "https://github.com/ChorusOne/ssz-rs.git", rev = "1f94d5dfc70c8
 ssz_rs_derive = { git = "https://github.com/ChorusOne/ssz-rs.git", rev = "1f94d5dfc70c86dab672e91ac46af04a5f96c342" }
 tiny-bip39 = "1.0.0"
 # This must be pinned to a version that lighthouse uses
-tree_hash = "0.5.2"
-types = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d"}
+tree_hash = "0.6.0"
+types = { git = "https://github.com/ChorusOne/lighthouse", rev = "d6ba8c397557f5c977b70f0d822a9228e98ca214"}
 uuid = { version = "1.10", features = ["v4"] }
 
 [dev-dependencies]
