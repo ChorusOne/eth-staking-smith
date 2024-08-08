@@ -55,6 +55,10 @@ pub struct NewMnemonicSubcommandOpts {
     /// Path to a custom Eth PoS chain config
     #[arg(long, visible_alias = "testnet_config")]
     pub testnet_config: Option<String>,
+
+    /// A version of CLI to include into generated deposit data
+    #[arg(long, visible_alias = "deposit_cli_version", default_value = "2.7.0")]
+    pub deposit_cli_version: String,
 }
 
 impl NewMnemonicSubcommandOpts {
@@ -86,7 +90,7 @@ impl NewMnemonicSubcommandOpts {
                 chain,
                 self.withdrawal_credentials.clone(),
                 32_000_000_000,
-                "2.3.0".to_string(),
+                self.deposit_cli_version.clone(),
                 self.testnet_config.clone(),
             )
             .unwrap()
