@@ -3,9 +3,10 @@ use std::path::Path;
 use eth2_network_config::Eth2NetworkConfig;
 use types::{ChainSpec, Config, MainnetEthSpec, MinimalEthSpec};
 
-use crate::DepositError;
+use crate::{networks::SupportedNetworks, DepositError};
 
-pub fn chain_spec_for_network(network_name: String) -> Result<ChainSpec, DepositError> {
+pub fn chain_spec_for_network(network: SupportedNetworks) -> Result<ChainSpec, DepositError> {
+    let network_name = network.to_string();
     if ["goerli", "prater", "mainnet", "holesky"].contains(&network_name.as_str()) {
         Ok(Eth2NetworkConfig::constant(&network_name)
             .unwrap()

@@ -4,6 +4,7 @@ use types::{ChainSpec, DepositData, Hash256, Signature};
 use crate::{
     chain_spec::{chain_spec_for_network, chain_spec_from_file},
     key_material::VotingKeyMaterial,
+    networks::SupportedNetworks,
 };
 
 #[derive(Debug, Eq, PartialEq)]
@@ -24,7 +25,7 @@ pub(crate) fn keystore_to_deposit(
     // withdrawal credentials
     withdrawal_credentials: &[u8],
     deposit_amount_gwei: u64,
-    network: String,
+    network: Option<SupportedNetworks>,
     chain_spec_file: Option<String>,
 ) -> Result<(DepositData, ChainSpec), DepositError> {
     // Validate data input
@@ -42,12 +43,9 @@ pub(crate) fn keystore_to_deposit(
         ));
     };
 
-    let network_str = network.as_str();
-    let spec = if network_str.is_empty() {
-        // Empty network name means custom config file is used
-        chain_spec_from_file(chain_spec_file.unwrap())?
-    } else {
-        chain_spec_for_network(network_str.to_string())?
+    let spec = match network {
+        Some(chain) => chain_spec_for_network(chain)?,
+        None => chain_spec_from_file(chain_spec_file.unwrap())?,
     };
 
     let credentials_hash = Hash256::from_slice(withdrawal_credentials);
@@ -108,7 +106,7 @@ mod test {
             &key_material,
             withdrawal_creds.as_slice(),
             32_000_000_000,
-            "mainnet".to_string(),
+            Some(crate::networks::SupportedNetworks::Mainnet),
             None,
         )
         .unwrap();
@@ -148,7 +146,7 @@ mod test {
             &key_material,
             withdrawal_creds.as_slice(),
             32_000_000_000,
-            "mainnet".to_string(),
+            Some(crate::networks::SupportedNetworks::Mainnet),
             None,
         )
         .unwrap();
@@ -188,7 +186,7 @@ mod test {
             &key_material,
             &withdrawal_creds,
             32_000_000_000,
-            "mainnet".to_string(),
+            Some(crate::networks::SupportedNetworks::Mainnet),
             None,
         )
         .unwrap();
@@ -235,7 +233,7 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            "goerli".to_string(),
+            Some(crate::networks::SupportedNetworks::Goerli),
             None,
         )
         .unwrap();
@@ -276,7 +274,7 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            "holesky".to_string(),
+            Some(crate::networks::SupportedNetworks::Holesky),
             None,
         )
         .unwrap();
@@ -315,7 +313,7 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            "".to_string(),
+            None,
             Some(manifest.to_str().unwrap().to_owned()),
         )
         .unwrap();
@@ -350,7 +348,7 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            "".to_string(),
+            None,
             Some(manifest.to_str().unwrap().to_owned()),
         )
         .unwrap();

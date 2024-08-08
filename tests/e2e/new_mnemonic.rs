@@ -1,6 +1,6 @@
 use assert_cmd::prelude::*;
 use eth2_keystore::{json_keystore::JsonKeystore, Keystore};
-use eth_staking_smith::ValidatorExports;
+use eth_staking_smith::{networks::SupportedNetworks, ValidatorExports};
 use predicates::prelude::*;
 use std::{path::PathBuf, process::Command};
 
@@ -11,7 +11,7 @@ use std::{path::PathBuf, process::Command};
 */
 #[test]
 fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = SupportedNetworks::Goerli;
     let decryption_password = "testtest";
     let num_validators = "1";
 
@@ -21,7 +21,7 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
 
     cmd.arg("new-mnemonic");
     cmd.arg("--chain");
-    cmd.arg(chain);
+    cmd.arg(chain.to_string());
     cmd.arg("--keystore_password");
     cmd.arg(decryption_password);
     cmd.arg("--num_validators");
@@ -49,9 +49,8 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
         .to_owned();
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    generated_deposit_data.validate(
-        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
-    );
+    generated_deposit_data
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -104,7 +103,8 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
     let generated_private_keys = generated_validator_json.private_keys;
     let generated_deposit_datas = generated_validator_json.deposit_data;
 
-    let spec = eth_staking_smith::chain_spec::chain_spec_for_network("goerli".to_string()).unwrap();
+    let spec =
+        eth_staking_smith::chain_spec::chain_spec_for_network(SupportedNetworks::Goerli).unwrap();
 
     for deposit_data in generated_deposit_datas {
         deposit_data.validate(spec.clone());
@@ -135,7 +135,7 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = SupportedNetworks::Goerli;
     let decryption_password = "testtest";
     let num_validators = "1";
     let execution_withdrawal_credentials = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
@@ -146,7 +146,7 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
 
     cmd.arg("new-mnemonic");
     cmd.arg("--chain");
-    cmd.arg(chain);
+    cmd.arg(chain.to_string());
     cmd.arg("--keystore_password");
     cmd.arg(decryption_password);
     cmd.arg("--num_validators");
@@ -175,9 +175,8 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
         .expect("could not get generated private key")
         .to_owned();
 
-    generated_deposit_data.validate(
-        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
-    );
+    generated_deposit_data
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -194,7 +193,7 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
 */
 #[test]
 fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = SupportedNetworks::Goerli;
     let decryption_password = "testtest";
     let num_validators = "3";
     let bls_withdrawal_credentials =
@@ -205,7 +204,7 @@ fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
 
     cmd.arg("new-mnemonic");
     cmd.arg("--chain");
-    cmd.arg(chain);
+    cmd.arg(chain.to_string());
     cmd.arg("--keystore_password");
     cmd.arg(decryption_password);
     cmd.arg("--num_validators");
@@ -234,9 +233,8 @@ fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
         .expect("could not get generated private key")
         .to_owned();
 
-    generated_deposit_data.validate(
-        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
-    );
+    generated_deposit_data
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -315,7 +313,7 @@ fn test_new_custom_testnet_config() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = SupportedNetworks::Goerli;
     let decryption_password = "testtest";
     let num_validators = "3";
     let execution_withdrawal_credentials =
@@ -327,7 +325,7 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
 
     cmd.arg("new-mnemonic");
     cmd.arg("--chain");
-    cmd.arg(chain);
+    cmd.arg(chain.to_string());
     cmd.arg("--keystore_password");
     cmd.arg(decryption_password);
     cmd.arg("--num_validators");
@@ -356,9 +354,8 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
         .expect("could not get generated deposit data")
         .to_owned();
 
-    generated_deposit_data.validate(
-        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
-    );
+    generated_deposit_data
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -375,7 +372,7 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
 */
 #[test]
 fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = SupportedNetworks::Goerli;
     let decryption_password = "testtest";
     let num_validators = "1";
     let kdf = "pbkdf2";
@@ -386,7 +383,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
 
     cmd.arg("new-mnemonic");
     cmd.arg("--chain");
-    cmd.arg(chain);
+    cmd.arg(chain.to_string());
     cmd.arg("--keystore_password");
     cmd.arg(decryption_password);
     cmd.arg("--num_validators");
@@ -416,9 +413,8 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
         .to_owned();
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    generated_deposit_data.validate(
-        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
-    );
+    generated_deposit_data
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -438,7 +434,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = SupportedNetworks::Goerli;
     let decryption_password = "testtest";
     let num_validators = "1";
     let kdf = "scrypt";
@@ -449,7 +445,7 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
 
     cmd.arg("new-mnemonic");
     cmd.arg("--chain");
-    cmd.arg(chain);
+    cmd.arg(chain.to_string());
     cmd.arg("--keystore_password");
     cmd.arg(decryption_password);
     cmd.arg("--num_validators");
@@ -479,9 +475,8 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
         .to_owned();
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    generated_deposit_data.validate(
-        eth_staking_smith::chain_spec::chain_spec_for_network(chain.to_string()).unwrap(),
-    );
+    generated_deposit_data
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -552,7 +547,7 @@ fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(num_validators);
 
     cmd.assert().failure().stderr(predicate::str::contains(
-        "goerliX' isn't a valid value for '--chain <chain>",
+        "invalid value \'goerliX\' for \'--chain <CHAIN>\'",
     ));
 
     Ok(())
@@ -581,7 +576,7 @@ fn test_error_unsupported_kdf() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(unsupported_kdf);
 
     cmd.assert().failure().stderr(predicate::str::contains(
-        "pbkdf3' isn't a valid value for '--kdf <kdf>",
+        "invalid value 'pbkdf3' for '--kdf <KDF>'",
     ));
 
     Ok(())

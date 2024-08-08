@@ -1,22 +1,7 @@
-# When outputting inclusion graphs in diagnostics that include features, this
-# option can be used to specify the depth at which feature edges will be added.
-# This option is included since the graphs can be quite large and the addition
-# of features from the crate(s) to all of the graph roots can be far too verbose.
-# This option can be overridden via `--feature-depth` on the cmd line
-feature-depth = 1
-
 [advisories]
-
-ignore = [
-    # Only used in CLI, should be fixed by https://github.com/ChorusOne/eth-staking-smith/issues/30
-    "atty@0.2.14",
-    # Unmaintained, but only used in CLI
-    "ansi_term@0.12.1"
-]
+ignore = []
 
 [licenses]
-# The lint level for crates which do not have a detectable license
-unlicensed = "allow"
 # List of explicitly allowed licenses
 # [possible values: any SPDX 3.11 short identifier (+ optional exception)].
 allow = [
@@ -28,8 +13,192 @@ allow = [
     "Unicode-DFS-2016",
     "BSD-3-Clause",
     "BSD-2-Clause",
-    "Zlib"
+    "Zlib",
+    "MPL-2.0",
+    "OpenSSL"
 ]
+
+#
+# Most of crates above are coming from lighthouse
+# where they keep repository license of Apache 2.0
+# https://github.com/sigp/lighthouse/blob/291146eeb4fea4bbe0aa3c6aa37eadd566d7e1d4/LICENSE 
+[[licenses.clarify]]
+crate = "merkle_proof"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+[[licenses.clarify]]
+crate = "bls"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "cached_tree_hash"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "compare_fields"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "compare_fields_derive"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "eth2_config"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "eth2_interop_keypairs"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "eth2_key_derivation"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "eth2_keystore"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "eth2_network_config"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "eth2_wallet"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "int_to_bytes"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "kzg"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "lighthouse_metrics"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "logging"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "pretty_reqwest_error"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "safe_arith"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "sensitive_url"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "swap_or_not_shuffle"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "test_random_derive"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+
+[[licenses.clarify]]
+crate = "types"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+[[licenses.clarify]]
+crate = "ring"
+# SPDX considers OpenSSL to encompass both the OpenSSL and SSLeay licenses
+# https://spdx.org/licenses/OpenSSL.html
+# ISC - Both BoringSSL and ring use this for their new files
+# MIT - "Files in third_party/ have their own licenses, as described therein. The MIT
+# license, for third_party/fiat, which, unlike other third_party directories, is
+# compiled into non-test libraries, is included below."
+# OpenSSL - Obviously
+expression = "ISC AND MIT AND OpenSSL"
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 
 
 #
@@ -43,3 +212,12 @@ allow = [
 deny = [
     { name = "serde_derive", version = ">1.0.171, <1.0.185" }
 ]
+
+
+[output]
+# When outputting inclusion graphs in diagnostics that include features, this
+# option can be used to specify the depth at which feature edges will be added.
+# This option is included since the graphs can be quite large and the addition
+# of features from the crate(s) to all of the graph roots can be far too verbose.
+# This option can be overridden via `--feature-depth` on the cmd line
+feature-depth = 1
