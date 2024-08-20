@@ -332,7 +332,7 @@ fn set_withdrawal_credentials(
                 }
             };
 
-            get_withdrawal_credentials(&withdrawal_pk, 0)
+            get_withdrawal_credentials(&withdrawal_pk.into(), 0)
         }
     };
 

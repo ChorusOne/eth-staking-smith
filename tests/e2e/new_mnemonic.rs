@@ -50,7 +50,7 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     generated_deposit_data
-        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(&chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -104,7 +104,7 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
     let generated_deposit_datas = generated_validator_json.deposit_data;
 
     let spec =
-        eth_staking_smith::chain_spec::chain_spec_for_network(SupportedNetworks::Goerli).unwrap();
+        eth_staking_smith::chain_spec::chain_spec_for_network(&SupportedNetworks::Goerli).unwrap();
 
     for deposit_data in generated_deposit_datas {
         deposit_data.validate(spec.clone());
@@ -176,7 +176,7 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
         .to_owned();
 
     generated_deposit_data
-        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(&chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -234,7 +234,7 @@ fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
         .to_owned();
 
     generated_deposit_data
-        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(&chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -355,7 +355,7 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
         .to_owned();
 
     generated_deposit_data
-        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(&chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -414,7 +414,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     generated_deposit_data
-        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(&chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
@@ -476,7 +476,7 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
     let keystore = generated_validator_json.keystores.get(0).unwrap();
 
     generated_deposit_data
-        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(chain).unwrap());
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(&chain).unwrap());
 
     // decrypt keystore with expected password to derive private key
     let encoded_private_key = decrypt_generated_keystore(
