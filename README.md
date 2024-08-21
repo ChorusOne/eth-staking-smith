@@ -82,6 +82,36 @@ You can use `eth-staking-smith` as follows to convert your address:
 
 Note that --validator-index and --validator-start-index are two distinct parameter, the former being index of validator on Beacon chain, and the latter is the index of validator private key derived from the seed
 
+
+### Command to send SignedBLSToExecutionChange request to Beacon node
+
+```
+curl -H "Content-Type: application/json" -d '{
+  "message": {
+    "validator_index": 100,
+    "from_bls_pubkey": "0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d",
+    "to_execution_address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+  },
+  "signature": "0x9220e5badefdfe8abc36cae01af29b981edeb940ff88c438f72c8af876fbd6416138c85f5348c5ace92a081fa15291aa0ffb856141b871dc807f3ec2fe9c8415cac3d76579c61455ab3938bc162e139d060c8aa13fcd670febe46bf0bb579c5a"
+}' http://localhost:3500/eth/v1/beacon/pool/bls_to_execution_change
+```
+
+## Generating pre-signed exit message
+
+It is possible to create pre-signed voluntary exit message for every validator that
+is generated from some known mnemonic, given the minimum epoch for exit to trigger.
+
+Use `eth-staking-smith` via command line like:
+
+### Command to generate presigned exit message
+
+```
+./target/debug/eth-staking-smith presigned-exit-message --chain mainnet --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --validator_start_index 0 --validator_index 100 --epoch 300000
+```
+
+Note that --validator-index and --validator-start-index are two distinct parameter, the former being index of validator on Beacon chain, and the latter is the index of validator private key derived from the seed
+
+
 ## Exporting CLI standard output into common keystores folder format
 
 Most validator clients recognize the keystore folder format,
@@ -117,18 +147,6 @@ lighthouse account validator import \
   --directory validator_keys/ --password-file ./password.txt
 ```
 
-### Command to send SignedBLSToExecutionChange request to Beacon node
-
-```
-curl -H "Content-Type: application/json" -d '{
-  "message": {
-    "validator_index": 100,
-    "from_bls_pubkey": "0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d",
-    "to_execution_address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
-  },
-  "signature": "0x9220e5badefdfe8abc36cae01af29b981edeb940ff88c438f72c8af876fbd6416138c85f5348c5ace92a081fa15291aa0ffb856141b871dc807f3ec2fe9c8415cac3d76579c61455ab3938bc162e139d060c8aa13fcd670febe46bf0bb579c5a"
-}' http://localhost:3500/eth/v1/beacon/pool/bls_to_execution_change
-```
 
 # Implementation Details 
 To avoid heavy lifting, we're interfacing [Lighthouse account manager](https://github.com/sigp/lighthouse/blob/stable/account_manager), but optimizing it in a way so all operations are done in memory and key material is never written to filesystem during the generation to cater for our use case.
