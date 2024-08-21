@@ -1,10 +1,10 @@
-use crate::bls_to_execution_change;
-use crate::bls_to_execution_change::operator::SignedBlsToExecutionChangeOperator;
-use crate::chain_spec::validators_root_and_spec;
 use clap::{arg, Parser};
 
+use crate::voluntary_exit::operator::SignedVoluntaryExitOperator;
+use crate::{chain_spec::validators_root_and_spec, voluntary_exit};
+
 #[derive(Clone, Parser)]
-pub struct BlsToExecutionChangeSubcommandOpts {
+pub struct PresignedExitMessageSubcommandOpts {
     /// The mnemonic that you used to generate your
     /// keys.
     ///
@@ -34,13 +34,9 @@ pub struct BlsToExecutionChangeSubcommandOpts {
     #[arg(long, visible_alias = "validator_index")]
     pub validator_index: u32,
 
-    /// BLS withdrawal credentials you used when depositing the validator.
-    #[arg(long, visible_alias = "bls_withdrawal_credentials")]
-    pub bls_withdrawal_credentials: String,
-
-    /// Execution (0x01) address to which funds withdrawn should be sent to.
+    /// Epoch number which must be included in the presigned exit message.
     #[arg(long, visible_alias = "execution_address")]
-    pub execution_address: String,
+    pub epoch: u64,
 
     /// Path to a custom Eth PoS chain config
     #[arg(long, visible_alias = "testnet_config")]
@@ -53,7 +49,7 @@ pub struct BlsToExecutionChangeSubcommandOpts {
     pub genesis_validators_root: Option<String>,
 }
 
-impl BlsToExecutionChangeSubcommandOpts {
+impl PresignedExitMessageSubcommandOpts {
     pub fn run(&self) {
         let chain = if self.chain.is_some() && self.testnet_config.is_some() {
             panic!("should only pass one of testnet_config or chain")
@@ -80,31 +76,25 @@ impl BlsToExecutionChangeSubcommandOpts {
             },
         );
 
-        let (bls_to_execution_change, keypair) =
-            bls_to_execution_change::bls_execution_change_from_mnemonic(
-                self.mnemonic.as_bytes(),
-                self.validator_start_index as u64,
-                self.validator_index as u64,
-                self.execution_address.as_str(),
-            );
-
-        let signed_bls_to_execution_change = bls_to_execution_change.sign(
-            &keypair.withdrawal_keypair.unwrap().sk,
-            genesis_validators_root,
-            &spec,
+        let (voluntary_exit, key_material) = voluntary_exit::voluntary_exit_message_from_mnemonic(
+            self.mnemonic.as_bytes(),
+            self.validator_start_index as u64,
+            self.validator_index as u64,
+            self.epoch,
         );
 
-        signed_bls_to_execution_change.clone().validate(
-            self.bls_withdrawal_credentials.as_str(),
-            self.execution_address.as_str(),
+        let signed_voluntary_exit =
+            voluntary_exit.sign(&key_material.keypair.sk, genesis_validators_root, &spec);
+
+        signed_voluntary_exit.clone().validate(
+            &key_material.keypair.pk,
             &spec,
             &genesis_validators_root,
         );
+        let export = signed_voluntary_exit.export();
 
-        let export = signed_bls_to_execution_change.export();
-
-        let signed_bls_to_execution_change_json =
+        let presigned_exit_message_json =
             serde_json::to_string_pretty(&export).expect("could not parse validator export");
-        println!("{}", signed_bls_to_execution_change_json);
+        println!("{}", presigned_exit_message_json);
     }
 }

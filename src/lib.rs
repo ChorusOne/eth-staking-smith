@@ -8,6 +8,7 @@ pub mod networks;
 pub(crate) mod seed;
 pub mod utils;
 pub mod validators;
+pub mod voluntary_exit;
 
 pub use deposit::DepositError;
 pub use validators::*;

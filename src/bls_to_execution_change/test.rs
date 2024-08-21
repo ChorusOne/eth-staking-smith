@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use types::{Hash256, PublicKey};
 
-use crate::{bls_to_execution_change::constants::validators_root_for, chain_spec, utils};
+use crate::{chain_spec, networks::validators_root_for, utils};
 
 const EXECUTION_WITHDRAWAL_ADDRESS: &str = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 const PHRASE: &str = "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup";
