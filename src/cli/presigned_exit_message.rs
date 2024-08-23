@@ -1,5 +1,6 @@
 use clap::{arg, Parser};
 
+use crate::beacon_node::BeaconNodeExportable;
 use crate::voluntary_exit::operator::SignedVoluntaryExitOperator;
 use crate::{chain_spec::validators_root_and_spec, voluntary_exit};
 
@@ -47,6 +48,11 @@ pub struct PresignedExitMessageSubcommandOpts {
     /// description
     #[arg(long, visible_alias = "genesis_validators_root")]
     pub genesis_validators_root: Option<String>,
+
+    /// Optional beacon node URL. If set, the bls-to-execution-change message
+    /// will not be printed on stdout, but instead sent to beacon node
+    #[arg(long, visible_alias = "beacon_node_uri")]
+    pub beacon_node_uri: Option<url::Url>,
 }
 
 impl PresignedExitMessageSubcommandOpts {
@@ -91,10 +97,16 @@ impl PresignedExitMessageSubcommandOpts {
             &spec,
             &genesis_validators_root,
         );
-        let export = signed_voluntary_exit.export();
 
-        let presigned_exit_message_json =
-            serde_json::to_string_pretty(&export).expect("could not parse validator export");
-        println!("{}", presigned_exit_message_json);
+        if self.beacon_node_uri.is_some() {
+            signed_voluntary_exit
+                .send_beacon_payload(self.beacon_node_uri.clone().unwrap())
+                .unwrap_or_else(|e| panic!("Failed sending beacon node payload: {:?}", e))
+        } else {
+            let export = signed_voluntary_exit.export();
+            let presigned_exit_message_json =
+                serde_json::to_string_pretty(&export).expect("could not parse validator export");
+            println!("{}", presigned_exit_message_json);
+        }
     }
 }

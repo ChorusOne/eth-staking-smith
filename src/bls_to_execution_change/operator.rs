@@ -5,11 +5,9 @@ use types::{
     SignedRoot,
 };
 
-use crate::utils::get_withdrawal_credentials;
+use crate::{beacon_node::BeaconNodeExportable, utils::get_withdrawal_credentials};
 
 pub(crate) trait SignedBlsToExecutionChangeOperator {
-    fn export(&self) -> serde_json::Value;
-
     fn validate(
         self,
         from_bls_withdrawal_credentials: &str,
@@ -19,18 +17,26 @@ pub(crate) trait SignedBlsToExecutionChangeOperator {
     );
 }
 
-impl SignedBlsToExecutionChangeOperator for SignedBlsToExecutionChange {
+impl BeaconNodeExportable for SignedBlsToExecutionChange {
     fn export(&self) -> serde_json::Value {
-        serde_json::json!({
-            "message": {
-                "validator_index": self.message.validator_index.to_string(),
-                "from_bls_pubkey": self.message.from_bls_pubkey,
-                "to_execution_address": format!("0x{}", hex::encode(self.message.to_execution_address)),
-            },
-            "signature": self.signature.to_string()
-        })
+        serde_json::json!([
+            {
+                "message": {
+                    "validator_index": self.message.validator_index.to_string(),
+                    "from_bls_pubkey": self.message.from_bls_pubkey,
+                    "to_execution_address": format!("0x{}", hex::encode(self.message.to_execution_address)),
+                },
+                "signature": self.signature.to_string()
+            }
+        ])
     }
 
+    fn beacon_node_path(&self) -> String {
+        "/eth/v1/beacon/pool/bls_to_execution_changes".to_string()
+    }
+}
+
+impl SignedBlsToExecutionChangeOperator for SignedBlsToExecutionChange {
     fn validate(
         self,
         from_bls_withdrawal_credentials: &str,

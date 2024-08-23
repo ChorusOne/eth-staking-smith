@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+pub(crate) mod beacon_node;
 pub mod bls_to_execution_change;
 pub mod chain_spec;
 pub mod cli;

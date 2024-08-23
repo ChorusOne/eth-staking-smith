@@ -3,23 +3,31 @@ use types::{
     ChainSpec, Domain, ForkName, PublicKey, SignedRoot, SignedVoluntaryExit, VoluntaryExit,
 };
 
-pub(crate) trait SignedVoluntaryExitOperator {
-    fn export(&self) -> serde_json::Value;
+use crate::beacon_node::BeaconNodeExportable;
 
+pub(crate) trait SignedVoluntaryExitOperator {
     fn validate(self, pubkey: &PublicKey, spec: &ChainSpec, genesis_validators_root: &Hash256);
 }
 
-impl SignedVoluntaryExitOperator for SignedVoluntaryExit {
+impl BeaconNodeExportable for SignedVoluntaryExit {
     fn export(&self) -> serde_json::Value {
-        serde_json::json!({
-            "message": {
-                "epoch": self.message.epoch.as_u64(),
-                "validator_index": self.message.validator_index,
-            },
-            "signature": self.signature.to_string()
-        })
+        serde_json::json!([
+            {
+                "message": {
+                    "epoch": self.message.epoch.as_u64(),
+                    "validator_index": self.message.validator_index,
+                },
+                "signature": self.signature.to_string()
+            }
+        ])
     }
 
+    fn beacon_node_path(&self) -> String {
+        "/eth/v1/beacon/pool/voluntary_exits".to_string()
+    }
+}
+
+impl SignedVoluntaryExitOperator for SignedVoluntaryExit {
     fn validate(self, pubkey: &PublicKey, spec: &ChainSpec, genesis_validators_root: &Hash256) {
         let fork_name = spec.fork_name_at_epoch(self.message.epoch);
         let fork_version = match fork_name {

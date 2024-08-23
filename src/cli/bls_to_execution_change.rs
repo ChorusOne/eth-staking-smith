@@ -1,6 +1,6 @@
-use crate::bls_to_execution_change;
 use crate::bls_to_execution_change::operator::SignedBlsToExecutionChangeOperator;
 use crate::chain_spec::validators_root_and_spec;
+use crate::{beacon_node::BeaconNodeExportable, bls_to_execution_change};
 use clap::{arg, Parser};
 
 #[derive(Clone, Parser)]
@@ -27,12 +27,12 @@ pub struct BlsToExecutionChangeSubcommandOpts {
     /// and you want to generate for the 2nd validator,
     /// the validator_start_index would be 1.
     /// If no index specified, it will be set to 0.
-    #[arg(long, visible_alias = "validator_start_index")]
-    pub validator_start_index: u32,
+    #[arg(long, visible_alias = "validator_seed_index")]
+    pub validator_seed_index: u32,
 
     /// On-chain beacon index of the validator.
-    #[arg(long, visible_alias = "validator_index")]
-    pub validator_index: u32,
+    #[arg(long, visible_alias = "validator_beacon_index")]
+    pub validator_beacon_index: u32,
 
     /// BLS withdrawal credentials you used when depositing the validator.
     #[arg(long, visible_alias = "bls_withdrawal_credentials")]
@@ -51,6 +51,11 @@ pub struct BlsToExecutionChangeSubcommandOpts {
     /// description
     #[arg(long, visible_alias = "genesis_validators_root")]
     pub genesis_validators_root: Option<String>,
+
+    /// Optional beacon node URL. If set, the bls-to-execution-change message
+    /// will not be printed on stdout, but instead sent to beacon node
+    #[arg(long, visible_alias = "beacon_node_uri")]
+    pub beacon_node_uri: Option<url::Url>,
 }
 
 impl BlsToExecutionChangeSubcommandOpts {
@@ -83,8 +88,8 @@ impl BlsToExecutionChangeSubcommandOpts {
         let (bls_to_execution_change, keypair) =
             bls_to_execution_change::bls_execution_change_from_mnemonic(
                 self.mnemonic.as_bytes(),
-                self.validator_start_index as u64,
-                self.validator_index as u64,
+                self.validator_seed_index as u64,
+                self.validator_beacon_index as u64,
                 self.execution_address.as_str(),
             );
 
@@ -101,10 +106,16 @@ impl BlsToExecutionChangeSubcommandOpts {
             &genesis_validators_root,
         );
 
-        let export = signed_bls_to_execution_change.export();
+        if self.beacon_node_uri.is_some() {
+            signed_bls_to_execution_change
+                .send_beacon_payload(self.beacon_node_uri.clone().unwrap())
+                .unwrap_or_else(|e| panic!("Failed sending beacon node payload: {:?}", e))
+        } else {
+            let export = signed_bls_to_execution_change.export();
 
-        let signed_bls_to_execution_change_json =
-            serde_json::to_string_pretty(&export).expect("could not parse validator export");
-        println!("{}", signed_bls_to_execution_change_json);
+            let signed_bls_to_execution_change_json =
+                serde_json::to_string_pretty(&export).expect("could not parse validator export");
+            println!("{}", signed_bls_to_execution_change_json);
+        }
     }
 }

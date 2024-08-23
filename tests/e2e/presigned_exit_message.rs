@@ -92,12 +92,65 @@ fn test_presigned_exit_message() -> Result<(), Box<dyn std::error::Error>> {
     let output = &cmd.output()?.stdout;
     let command_output = std::str::from_utf8(output)?;
 
-    let signed_voluntary_exit: SignedVoluntaryExit = serde_json::from_str(command_output)?;
+    let signed_voluntary_exits: Vec<SignedVoluntaryExit> = serde_json::from_str(command_output)?;
+    assert_eq!(1, signed_voluntary_exits.len());
+    let signed_voluntary_exit = signed_voluntary_exits.first().unwrap();
 
     assert_eq!(
         signed_voluntary_exit.signature.to_string(),
         "0xa74f22d26da9934c2a9c783799fb9e7bef49b3d7c3759a0683b52ee5d71516c0ecdbcc47703f11959c5e701a6c47194410bed800217bd4dd0dab1e0587b14551771accd04ff1c78302f9605f44c3894976c5b3537b70cb7ac9dcb5398dc22079"
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_presigned_exit_message_send_beacon_node() -> Result<(), Box<dyn std::error::Error>> {
+    let chain = "mainnet";
+    let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
+    let validator_start_index = "0";
+    let validator_index = "100";
+    let epoch = "305658";
+
+    let server = httpmock::MockServer::start();
+
+    let beacon_node_mock = server.mock(|when, then| {
+        when.method(httpmock::Method::POST)
+            .path("/eth/v1/beacon/pool/voluntary_exits")
+            .json_body(serde_json::json!([
+                {
+                    "message": {
+                        "epoch": epoch.parse::<u32>().unwrap(),
+                        "validator_index": validator_index.parse::<u32>().unwrap(),
+                    },
+                    "signature": "0xa74f22d26da9934c2a9c783799fb9e7bef49b3d7c3759a0683b52ee5d71516c0ecdbcc47703f11959c5e701a6c47194410bed800217bd4dd0dab1e0587b14551771accd04ff1c78302f9605f44c3894976c5b3537b70cb7ac9dcb5398dc22079"
+                }
+            ]));
+        then.status(200);
+    });
+
+    // run eth-staking-smith
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("presigned-exit-message");
+    cmd.arg("--chain");
+    cmd.arg(chain);
+    cmd.arg("--validator_seed_index");
+    cmd.arg(validator_start_index);
+    cmd.arg("--validator_beacon_index");
+    cmd.arg(validator_index);
+    cmd.arg("--mnemonic");
+    cmd.arg(expected_mnemonic);
+    cmd.arg("--epoch");
+    cmd.arg(epoch);
+    cmd.arg("--beacon-node-uri");
+    cmd.arg(server.base_url());
+
+    cmd.assert().success();
+
+    // verify request path and body
+
+    beacon_node_mock.assert();
 
     Ok(())
 }

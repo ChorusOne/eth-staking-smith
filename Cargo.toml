@@ -25,6 +25,8 @@ env_logger = "^0.11"
 hex = "0.4"
 lazy_static = "1.5"
 log = "^0.4"
+# eth2_network_config uses native-tls, so do we
+reqwest = { version = "0.11", default-features = false, features = ["native-tls"] }
 getrandom = "0.2"
 regex = "1.10.6"
 serde = "1.0.204"
@@ -35,6 +37,7 @@ tiny-bip39 = "1.0.0"
 tree_hash = "0.5.2"
 tree_hash_derive = "0.5.2"
 types = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d"}
+url = "2.5"
 uuid = { version = "1.10", features = ["v4"] }
 
 [dev-dependencies]
@@ -42,6 +45,7 @@ test-log = "^0.2"
 pretty_assertions = "^1.4"
 assert_cmd = "2.0"
 predicates = "3.0"
+httpmock = "0.7"
 
 [[test]]
 name = "e2e-tests"
