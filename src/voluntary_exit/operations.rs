@@ -5,21 +5,19 @@ use types::{
 
 use crate::beacon_node::BeaconNodeExportable;
 
-pub(crate) trait SignedVoluntaryExitOperator {
+pub(crate) trait SignedVoluntaryExitValidator {
     fn validate(self, pubkey: &PublicKey, spec: &ChainSpec, genesis_validators_root: &Hash256);
 }
 
 impl BeaconNodeExportable for SignedVoluntaryExit {
     fn export(&self) -> serde_json::Value {
-        serde_json::json!([
-            {
-                "message": {
-                    "epoch": self.message.epoch.as_u64(),
-                    "validator_index": self.message.validator_index,
-                },
-                "signature": self.signature.to_string()
-            }
-        ])
+        serde_json::json!({
+            "message": {
+                "epoch": self.message.epoch.as_u64(),
+                "validator_index": self.message.validator_index,
+            },
+            "signature": self.signature.to_string()
+        })
     }
 
     fn beacon_node_path(&self) -> String {
@@ -27,7 +25,7 @@ impl BeaconNodeExportable for SignedVoluntaryExit {
     }
 }
 
-impl SignedVoluntaryExitOperator for SignedVoluntaryExit {
+impl SignedVoluntaryExitValidator for SignedVoluntaryExit {
     fn validate(self, pubkey: &PublicKey, spec: &ChainSpec, genesis_validators_root: &Hash256) {
         let fork_name = spec.fork_name_at_epoch(self.message.epoch);
         let fork_version = match fork_name {

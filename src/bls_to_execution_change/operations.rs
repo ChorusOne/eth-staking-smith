@@ -7,7 +7,7 @@ use types::{
 
 use crate::{beacon_node::BeaconNodeExportable, utils::get_withdrawal_credentials};
 
-pub(crate) trait SignedBlsToExecutionChangeOperator {
+pub(crate) trait SignedBlsToExecutionChangeValidator {
     fn validate(
         self,
         from_bls_withdrawal_credentials: &str,
@@ -36,7 +36,7 @@ impl BeaconNodeExportable for SignedBlsToExecutionChange {
     }
 }
 
-impl SignedBlsToExecutionChangeOperator for SignedBlsToExecutionChange {
+impl SignedBlsToExecutionChangeValidator for SignedBlsToExecutionChange {
     fn validate(
         self,
         from_bls_withdrawal_credentials: &str,

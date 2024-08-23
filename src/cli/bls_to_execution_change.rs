@@ -1,4 +1,4 @@
-use crate::bls_to_execution_change::operator::SignedBlsToExecutionChangeOperator;
+use crate::bls_to_execution_change::operations::SignedBlsToExecutionChangeValidator;
 use crate::chain_spec::validators_root_and_spec;
 use crate::{beacon_node::BeaconNodeExportable, bls_to_execution_change};
 use clap::{arg, Parser};

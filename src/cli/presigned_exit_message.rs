@@ -1,7 +1,7 @@
 use clap::{arg, Parser};
 
 use crate::beacon_node::BeaconNodeExportable;
-use crate::voluntary_exit::operator::SignedVoluntaryExitOperator;
+use crate::voluntary_exit::operations::SignedVoluntaryExitValidator;
 use crate::{chain_spec::validators_root_and_spec, voluntary_exit};
 
 #[derive(Clone, Parser)]
@@ -49,7 +49,7 @@ pub struct PresignedExitMessageSubcommandOpts {
     #[arg(long, visible_alias = "genesis_validators_root")]
     pub genesis_validators_root: Option<String>,
 
-    /// Optional beacon node URL. If set, the bls-to-execution-change message
+    /// Optional beacon node URL. If set, the presigned-exit-message value
     /// will not be printed on stdout, but instead sent to beacon node
     #[arg(long, visible_alias = "beacon_node_uri")]
     pub beacon_node_uri: Option<url::Url>,

@@ -1,4 +1,4 @@
-pub(crate) mod operator;
+pub(crate) mod operations;
 
 use types::{Epoch, VoluntaryExit};
 
