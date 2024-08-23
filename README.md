@@ -188,3 +188,17 @@ To test our code e2e, we've generated files using the [staking deposit cli v2.3.
 | seed   | secret value used to derive HD wallet addresses from a mnemonic phrase (BIP39 standard)       |
 | withdrawal credentials   |    Withdrawal Credentials is a 32-byte field in the deposit data, for verifying the destination of valid withdrawals. Currently, there are two types of withdrawals: BLS withdrawal (with a 00 prefix) and Ethereum withdrawals (with a 01 prefix). By default the former will be generated, however Ethereum is planning to fully move to 01 credentials once withdrawals become available |
 | withdrawal address   |  Address for which withdrawal credentials should be generated. Eth staking smith allows execution addresses with the format `^(0x[a-fA-F0-9]{40})$` |
+
+
+## Backwards compatibility
+This project aims to present state-of-art Ethereum staking experience,
+and does not follow semver approach for new releases.
+Instead, backwards compatibility is provided on best-effort basis for both
+library and command line interfaces, and every release that adds new
+functionality can be treated as major release.
+
+Interfaces may change as result of implementing new features, and/or
+backwards incompatible changes in Ethereum protocol.
+
+It is recommended to pin release version for users of command line interface,
+and pin specific git commit of `eth-staking-smith` for library interface users.
