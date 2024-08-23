@@ -111,7 +111,7 @@ mod test {
         Seed::new(&mnemonic, "")
     }
     fn withdrawal_creds_from_pk(withdrawal_pk: &PublicKey) -> String {
-        let withdrawal_creds = utils::get_withdrawal_credentials(&withdrawal_pk, 0);
+        let withdrawal_creds = utils::get_withdrawal_credentials(&withdrawal_pk.into(), 0);
         let credentials_hash = Hash256::from_slice(&withdrawal_creds);
         hex::encode(&credentials_hash.as_bytes())
     }

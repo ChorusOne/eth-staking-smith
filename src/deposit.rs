@@ -44,7 +44,7 @@ pub(crate) fn keystore_to_deposit(
     };
 
     let spec = match network {
-        Some(chain) => chain_spec_for_network(chain)?,
+        Some(chain) => chain_spec_for_network(&chain)?,
         None => chain_spec_from_file(chain_spec_file.unwrap())?,
     };
 
@@ -181,7 +181,7 @@ mod test {
             voting_secret: PlainText::from(keypair.sk.serialize().as_bytes().to_vec()),
             withdrawal_keypair: Some(keypair.clone()),
         };
-        let withdrawal_creds = get_withdrawal_credentials(&pk, 0);
+        let withdrawal_creds = get_withdrawal_credentials(&pk.into(), 0);
         let (deposit_data, _) = keystore_to_deposit(
             &key_material,
             &withdrawal_creds,

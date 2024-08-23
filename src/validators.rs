@@ -8,7 +8,6 @@ use crate::utils::get_withdrawal_credentials;
 use bip39::{Mnemonic, Seed as Bip39Seed};
 use eth2_keystore::Keystore;
 use eth2_wallet::json_wallet::Kdf;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tree_hash::TreeHash;
 use types::{
@@ -298,18 +297,14 @@ fn set_withdrawal_credentials(
 ) -> Result<Vec<u8>, DepositError> {
     let withdrawal_credentials = match existing_withdrawal_credentials {
         Some(creds) => {
-            let execution_addr_regex: Regex = Regex::new(r"^(0x[a-fA-F0-9]{40})$").unwrap();
-            let execution_creds_regex: Regex =
-                Regex::new(r"^(0x01[0]{22}[a-fA-F0-9]{40})$").unwrap();
-            let bls_creds_regex: Regex = Regex::new(r"^(0x00[a-fA-F0-9]{62})$").unwrap();
-
-            let withdrawal_credentials = if execution_addr_regex.is_match(creds.as_str()) {
-                // see format of execution address: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#eth1_address_withdrawal_prefix
+            let withdrawal_credentials = if crate::utils::EXECUTION_ADDR_REGEX
+                .is_match(creds.as_str())
+            {
                 let mut formatted_creds = ETH1_CREDENTIALS_PREFIX.to_vec();
                 formatted_creds.extend_from_slice(&creds.as_bytes()[2..]);
                 formatted_creds
-            } else if execution_creds_regex.is_match(creds.as_str())
-                || bls_creds_regex.is_match(creds.as_str())
+            } else if crate::utils::EXECUTION_CREDS_REGEX.is_match(creds.as_str())
+                || crate::utils::BLS_CREDS_REGEX.is_match(creds.as_str())
             {
                 // see format of execution & bls credentials https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#bls_withdrawal_prefix
                 let formatted_creds = creds.as_bytes()[2..].to_vec();
@@ -332,7 +327,7 @@ fn set_withdrawal_credentials(
                 }
             };
 
-            get_withdrawal_credentials(&withdrawal_pk, 0)
+            get_withdrawal_credentials(&withdrawal_pk.into(), 0)
         }
     };
 
