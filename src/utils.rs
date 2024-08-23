@@ -1,5 +1,6 @@
 use eth2_keystore::json_keystore::{HexBytes, Kdf, Pbkdf2, Prf, Scrypt};
 use eth2_keystore::{DKLEN, SALT_SIZE};
+use regex::Regex;
 use ssz::Encode;
 use types::{Hash256, PublicKeyBytes};
 
@@ -44,4 +45,13 @@ pub fn withdrawal_creds_from_pk(withdrawal_pk: &PublicKeyBytes) -> String {
     let withdrawal_creds = get_withdrawal_credentials(withdrawal_pk, 0);
     let credentials_hash = Hash256::from_slice(&withdrawal_creds);
     hex::encode(credentials_hash.as_bytes())
+}
+
+// Various regexes used for input validation
+lazy_static::lazy_static! {
+    /// see format of execution address: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#eth1_address_withdrawal_prefix
+    pub static ref EXECUTION_ADDR_REGEX: Regex = Regex::new(r"^(0x[a-fA-F0-9]{40})$").unwrap();
+    pub static ref EXECUTION_CREDS_REGEX: Regex =
+        Regex::new(r"^(0x01[0]{22}[a-fA-F0-9]{40})$").unwrap();
+    pub static ref BLS_CREDS_REGEX: Regex = Regex::new(r"^(0x00[a-fA-F0-9]{62})$").unwrap();
 }

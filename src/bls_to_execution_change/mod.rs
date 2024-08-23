@@ -1,6 +1,5 @@
 pub(crate) mod operator;
 
-use regex::Regex;
 use types::{Address, BlsToExecutionChange};
 
 use crate::key_material::VotingKeyMaterial;
@@ -13,9 +12,7 @@ pub fn bls_execution_change_from_mnemonic(
 ) -> (BlsToExecutionChange, VotingKeyMaterial) {
     let (seed, _) = crate::seed::get_eth2_seed(Some(mnemonic_phrase));
 
-    let execution_addr_regex: Regex = Regex::new(r"^(0x[a-fA-F0-9]{40})$").unwrap();
-
-    if !execution_addr_regex.is_match(execution_address) {
+    if !crate::utils::EXECUTION_ADDR_REGEX.is_match(execution_address) {
         panic!(
             "Invalid execution address: Please pass in a valid execution address with the correct format"
         );
