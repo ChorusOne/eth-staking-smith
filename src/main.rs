@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 use clap::{Parser, Subcommand};
-use eth_staking_smith::cli::{bls_to_execution_change, existing_mnemonic, new_mnemonic};
+use eth_staking_smith::cli::{
+    bls_to_execution_change, existing_mnemonic, new_mnemonic, presigned_exit_message,
+};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -18,6 +20,9 @@ enum SubCommands {
     ExistingMnemonic(existing_mnemonic::ExistingMnemonicSubcommandOpts),
     /// Generate new keys with new mnemonic.
     NewMnemonic(new_mnemonic::NewMnemonicSubcommandOpts),
+    /// Generate presigned exit message which can be sent
+    /// to the Beacon Node to start voluntary exit process for the validator
+    PresignedExitMessage(presigned_exit_message::PresignedExitMessageSubcommandOpts),
 }
 
 impl SubCommands {
@@ -26,6 +31,7 @@ impl SubCommands {
             Self::BlsToExecutionChange(sub) => sub.run(),
             Self::ExistingMnemonic(sub) => sub.run(),
             Self::NewMnemonic(sub) => sub.run(),
+            Self::PresignedExitMessage(sub) => sub.run(),
         }
     }
 }

@@ -1,4 +1,3 @@
-pub mod constants;
 pub(crate) mod operator;
 
 use regex::Regex;

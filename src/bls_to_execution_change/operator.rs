@@ -72,6 +72,8 @@ impl SignedBlsToExecutionChangeOperator for SignedBlsToExecutionChange {
             to_execution_address: self.message.to_execution_address,
         };
         let signing_root = bls_to_execution_change.signing_root(domain);
-        self.signature.verify(&withdrawal_pubkey, signing_root);
+        if !self.signature.verify(&withdrawal_pubkey, signing_root) {
+            panic!("Invalid bls to execution change signature")
+        }
     }
 }
