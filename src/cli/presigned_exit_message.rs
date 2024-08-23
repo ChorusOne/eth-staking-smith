@@ -27,12 +27,12 @@ pub struct PresignedExitMessageSubcommandOpts {
     /// and you want to generate for the 2nd validator,
     /// the validator_start_index would be 1.
     /// If no index specified, it will be set to 0.
-    #[arg(long, visible_alias = "validator_start_index")]
-    pub validator_start_index: u32,
+    #[arg(long, visible_alias = "validator_seed_index")]
+    pub validator_seed_index: u32,
 
     /// On-chain beacon index of the validator.
-    #[arg(long, visible_alias = "validator_index")]
-    pub validator_index: u32,
+    #[arg(long, visible_alias = "validator_beacon_index")]
+    pub validator_beacon_index: u32,
 
     /// Epoch number which must be included in the presigned exit message.
     #[arg(long, visible_alias = "execution_address")]
@@ -78,8 +78,8 @@ impl PresignedExitMessageSubcommandOpts {
 
         let (voluntary_exit, key_material) = voluntary_exit::voluntary_exit_message_from_mnemonic(
             self.mnemonic.as_bytes(),
-            self.validator_start_index as u64,
-            self.validator_index as u64,
+            self.validator_seed_index as u64,
+            self.validator_beacon_index as u64,
             self.epoch,
         );
 

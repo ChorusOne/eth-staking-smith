@@ -78,9 +78,9 @@ fn test_presigned_exit_message() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("presigned-exit-message");
     cmd.arg("--chain");
     cmd.arg(chain);
-    cmd.arg("--validator_start_index");
+    cmd.arg("--validator_seed_index");
     cmd.arg(validator_start_index);
-    cmd.arg("--validator_index");
+    cmd.arg("--validator_beacon_index");
     cmd.arg(validator_index);
     cmd.arg("--mnemonic");
     cmd.arg(expected_mnemonic);

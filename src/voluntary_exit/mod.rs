@@ -6,7 +6,7 @@ use crate::key_material::VotingKeyMaterial;
 
 pub fn voluntary_exit_message_from_mnemonic(
     mnemonic_phrase: &[u8],
-    validator_start_index: u64,
+    validator_seed_index: u64,
     validator_beacon_index: u64,
     epoch: u64,
 ) -> (VoluntaryExit, VotingKeyMaterial) {
@@ -15,7 +15,7 @@ pub fn voluntary_exit_message_from_mnemonic(
     let key_materials = crate::key_material::seed_to_key_material(
         &seed,
         1,
-        validator_start_index as u32,
+        validator_seed_index as u32,
         None,
         false,
         None,
