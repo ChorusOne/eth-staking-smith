@@ -109,7 +109,7 @@ Use `eth-staking-smith` via command line like:
 Note that --validator-beacon-index and --validator-seed-index are two distinct parameter, the former being index of validator on Beacon chain, and the latter is the index of validator private key derived from the seed
 
 
-### Command to send SignedBLSToExecutionChange request to Beacon node
+### Command to send VoluntaryExitMessage request to Beacon node
 
 ```
 ./target/debug/eth-staking-smith presigned-exit-message --chain mainnet --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --validator_seed_index 0 --validator_beacon_index 100 --epoch 300000 \
