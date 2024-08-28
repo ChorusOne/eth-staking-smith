@@ -13,8 +13,8 @@ pub struct PresignedExitMessageSubcommandOpts {
     /// argument, and wait for the CLI to ask you
     ///    for your mnemonic as otherwise it will
     ///    appear in your shell history.
-    #[arg(long)]
-    pub mnemonic: String,
+    #[arg(long, required_unless_present = "private_key")]
+    pub mnemonic: Option<String>,
 
     /// The name of Ethereum PoS chain you are targeting.
     ///
@@ -28,8 +28,16 @@ pub struct PresignedExitMessageSubcommandOpts {
     /// and you want to generate for the 2nd validator,
     /// the validator_start_index would be 1.
     /// If no index specified, it will be set to 0.
-    #[arg(long, visible_alias = "validator_seed_index")]
-    pub validator_seed_index: u32,
+    #[arg(
+        long,
+        visible_alias = "validator_seed_index",
+        required_unless_present = "private_key"
+    )]
+    pub validator_seed_index: Option<u32>,
+
+    /// Validator private key bytes in hex form
+    #[arg(long, required_unless_present_all = ["mnemonic", "validator_seed_index"])]
+    pub private_key: Option<String>,
 
     /// On-chain beacon index of the validator.
     #[arg(long, visible_alias = "validator_beacon_index")]
@@ -82,12 +90,24 @@ impl PresignedExitMessageSubcommandOpts {
             },
         );
 
-        let (voluntary_exit, key_material) = voluntary_exit::voluntary_exit_message_from_mnemonic(
-            self.mnemonic.as_bytes(),
-            self.validator_seed_index as u64,
-            self.validator_beacon_index as u64,
-            self.epoch,
-        );
+        let (voluntary_exit, key_material) = if self.mnemonic.is_some() {
+            voluntary_exit::voluntary_exit_message_from_mnemonic(
+                self.mnemonic.clone().unwrap().as_bytes(),
+                self.validator_seed_index.unwrap() as u64,
+                self.validator_beacon_index as u64,
+                self.epoch,
+            )
+        } else {
+            let secret_key_str = self.private_key.clone().unwrap();
+            let secret_key_bytes =
+                hex::decode(secret_key_str.strip_prefix("0x").unwrap_or(&secret_key_str))
+                    .expect("Invalid custom genesis validators root");
+            voluntary_exit::voluntary_exit_message_from_secret_key(
+                secret_key_bytes.as_slice(),
+                self.validator_beacon_index as u64,
+                self.epoch,
+            )
+        };
 
         let signed_voluntary_exit =
             voluntary_exit.sign(&key_material.keypair.sk, genesis_validators_root, &spec);

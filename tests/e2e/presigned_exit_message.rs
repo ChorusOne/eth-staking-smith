@@ -149,3 +149,37 @@ fn test_presigned_exit_message_send_beacon_node() -> Result<(), Box<dyn std::err
 
     Ok(())
 }
+
+#[test]
+fn test_presigned_exit_message_private_key() -> Result<(), Box<dyn std::error::Error>> {
+    let chain = "mainnet";
+    let private_key = "0x6d446ca271eb229044b9039354ecdfa6244d1a11615ec1a46fc82a800367de5d";
+    let validator_index = "100";
+    let epoch = "305658";
+
+    // run eth-staking-smith
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("presigned-exit-message");
+    cmd.arg("--chain");
+    cmd.arg(chain);
+    cmd.arg("--validator_beacon_index");
+    cmd.arg(validator_index);
+    cmd.arg("--private-key");
+    cmd.arg(private_key);
+    cmd.arg("--epoch");
+    cmd.arg(epoch);
+
+    cmd.assert().success();
+
+    let output = &cmd.output()?.stdout;
+    let command_output = std::str::from_utf8(output)?;
+
+    let signed_voluntary_exit: SignedVoluntaryExit = serde_json::from_str(command_output)?;
+    assert_eq!(
+        signed_voluntary_exit.signature.to_string(),
+        "0xa74f22d26da9934c2a9c783799fb9e7bef49b3d7c3759a0683b52ee5d71516c0ecdbcc47703f11959c5e701a6c47194410bed800217bd4dd0dab1e0587b14551771accd04ff1c78302f9605f44c3894976c5b3537b70cb7ac9dcb5398dc22079"
+    );
+
+    Ok(())
+}

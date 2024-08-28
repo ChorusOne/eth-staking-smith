@@ -33,5 +33,20 @@ pub fn voluntary_exit_message_from_mnemonic(
     (voluntary_exit, key_material.clone())
 }
 
+pub fn voluntary_exit_message_from_secret_key(
+    secret_key_bytes: &[u8],
+    validator_beacon_index: u64,
+    epoch: u64,
+) -> (VoluntaryExit, VotingKeyMaterial) {
+    let key_material = VotingKeyMaterial::from_voting_secret_bytes(secret_key_bytes);
+
+    let voluntary_exit = VoluntaryExit {
+        epoch: Epoch::from(epoch),
+        validator_index: validator_beacon_index,
+    };
+
+    (voluntary_exit, key_material)
+}
+
 #[cfg(test)]
 mod test;
