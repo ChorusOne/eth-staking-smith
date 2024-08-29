@@ -101,7 +101,7 @@ impl PresignedExitMessageSubcommandOpts {
             let secret_key_str = self.private_key.clone().unwrap();
             let secret_key_bytes =
                 hex::decode(secret_key_str.strip_prefix("0x").unwrap_or(&secret_key_str))
-                    .expect("Invalid custom genesis validators root");
+                    .expect("Invalid private key hex input");
             voluntary_exit::voluntary_exit_message_from_secret_key(
                 secret_key_bytes.as_slice(),
                 self.validator_beacon_index as u64,

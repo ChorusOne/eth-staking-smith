@@ -108,6 +108,14 @@ Use `eth-staking-smith` via command line like:
 
 Note that --validator-beacon-index and --validator-seed-index are two distinct parameter, the former being index of validator on Beacon chain, and the latter is the index of validator private key derived from the seed
 
+It is also possible to directly pass private key with `--private-key` parameter instead,
+then `--mnemonic` and `--validator-seed-index` may be omitted like follows
+
+```
+./target/debug/eth-staking-smith presigned-exit-message --chain mainnet --private-key "0x3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c" --validator_beacon_index 100 --epoch 300000
+```
+
+
 
 ### Command to send VoluntaryExitMessage request to Beacon node
 
