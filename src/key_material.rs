@@ -4,7 +4,7 @@ use eth2_keystore::{
     json_keystore::Kdf, keypair_from_secret, Keystore, KeystoreBuilder, PlainText,
 };
 use eth2_wallet::{KeyType, ValidatorPath};
-use types::Keypair;
+use types::{Keypair, SecretKey};
 
 use crate::utils::{pbkdf2, scrypt};
 
@@ -15,6 +15,22 @@ pub struct VotingKeyMaterial {
     pub keypair: Keypair,
     pub voting_secret: PlainText,
     pub withdrawal_keypair: Option<Keypair>,
+}
+
+impl VotingKeyMaterial {
+    pub fn from_voting_secret_bytes(voting_secret_bytes: &[u8]) -> Self {
+        let sk = SecretKey::deserialize(voting_secret_bytes).expect("Invalid private key passed");
+        let pk = sk.public_key();
+        let keypair = Keypair::from_components(pk, sk);
+        let voting_secret = voting_secret_bytes.to_vec().into();
+
+        Self {
+            keypair,
+            voting_secret,
+            keystore: None,
+            withdrawal_keypair: None,
+        }
+    }
 }
 
 /// Key derivation function for the keystore
