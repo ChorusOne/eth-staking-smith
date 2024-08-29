@@ -7,11 +7,12 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.target.runner }}
     strategy:
       matrix:
         target:
-          - { triple: x86_64-unknown-linux-gnu, suffix: linux_amd64, file: eth-staking-smith }
+          - { triple: x86_64-unknown-linux-gnu, suffix: linux_amd64, file: eth-staking-smith, runner: ubuntu-latest }
+          - { triple: x86_64-unknown-linux-gnu, suffix: linux_amd64_glibc2.31, file: eth-staking-smith, runner: ubuntu-20.04 }
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
