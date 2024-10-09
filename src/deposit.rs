@@ -297,6 +297,49 @@ mod test {
     }
 
     #[test]
+    fn test_deposit_gnosis() {
+        let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair,
+            voting_secret: PlainText::from(
+                keystore
+                    .decrypt_keypair(PASSWORD)
+                    .unwrap()
+                    .sk
+                    .serialize()
+                    .as_bytes()
+                    .to_vec(),
+            ),
+            withdrawal_keypair: None,
+        };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH1).unwrap();
+        let (deposit_data, _) = keystore_to_deposit(
+            &key_material,
+            &withdrawal_creds.as_slice(),
+            32_000_000_000,
+            Some(crate::networks::SupportedNetworks::Gnosis),
+            None,
+        )
+        .unwrap();
+
+        // Signature asserted here is generated with
+        // https://github.com/gnosischain/validator-data-generator
+
+        // python ./staking_deposit/deposit.py existing-mnemonic --eth1_withdrawal_address=0x010000000000000000000000000000000000000001
+
+        // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
+        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
+        // Please choose how many new validators you wish to run: 1
+        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'ropsten', 'goerli', 'kiln', 'sepolia', 'gnosis', 'chiado']:  [gnosis]: gnosis
+        assert_eq!(
+            "97cb6902975fc7cdcd685006ca972a22799aece787b9665af9e0b501e70a4db100cf280c99f1b20ea49c953b526b0e760b4a6d6a8d1092a6afbad3efdab8269384f2034c4fd97ebd8fc2101467b2fe6aeadcf5fcfaa11952be8d3939a55b10f7",
+            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+        );
+    }
+
+    #[test]
     fn test_deposit_custom_testnet() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
         let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
