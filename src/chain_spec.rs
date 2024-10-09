@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use eth2_network_config::Eth2NetworkConfig;
-use types::{ChainSpec, Config, Hash256, MainnetEthSpec, MinimalEthSpec};
+use types::{ChainSpec, Config, GnosisEthSpec, Hash256, MainnetEthSpec, MinimalEthSpec};
 
 use crate::{networks::SupportedNetworks, DepositError};
 
@@ -12,6 +12,12 @@ pub fn chain_spec_for_network(network: &SupportedNetworks) -> Result<ChainSpec, 
             .unwrap()
             .unwrap()
             .chain_spec::<MainnetEthSpec>()
+            .unwrap())
+    } else if network_name.as_str() == "gnosis" {
+        Ok(Eth2NetworkConfig::constant(&network_name)
+            .unwrap()
+            .unwrap()
+            .chain_spec::<GnosisEthSpec>()
             .unwrap())
     } else {
         Err(DepositError::InvalidNetworkName(format!(

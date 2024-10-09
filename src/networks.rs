@@ -7,6 +7,7 @@ use types::Hash256;
 pub enum SupportedNetworks {
     Mainnet,
     Holesky,
+    Gnosis,
     // These are legacy networks they are supported on best effort basis
     Prater,
     Goerli,
@@ -19,6 +20,7 @@ impl std::fmt::Display for SupportedNetworks {
             SupportedNetworks::Holesky => "holesky",
             SupportedNetworks::Prater => "goerli",
             SupportedNetworks::Goerli => "goerli",
+            SupportedNetworks::Gnosis => "gnosis",
         };
         write!(f, "{}", s)
     }
@@ -41,6 +43,9 @@ lazy_static! {
     pub static ref GENESIS_VALIDATORS_ROOT_GOERLI: Hash256 = decode_genesis_validators_root(
         "043db0d9a83813551ee2f33450d23797757d430911a9320530ad8a0eabc43efb"
     );
+    pub static ref GENESIS_VALIDATORS_ROOT_GNOSIS: Hash256 = decode_genesis_validators_root(
+        "f5dcb5564e829aab27264b9becd5dfaa017085611224cb3036f573368dbb9d47"
+    );
     pub static ref GENESIS_VALIDATOR_ROOT: HashMap<SupportedNetworks, Hash256> = HashMap::from([
         (
             SupportedNetworks::Mainnet,
@@ -58,6 +63,10 @@ lazy_static! {
             SupportedNetworks::Holesky,
             GENESIS_VALIDATORS_ROOT_HOLESKY.to_owned()
         ),
+        (
+            SupportedNetworks::Gnosis,
+            GENESIS_VALIDATORS_ROOT_GNOSIS.to_owned()
+        )
     ]);
 }
 
