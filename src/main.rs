@@ -1,7 +1,8 @@
 #![forbid(unsafe_code)]
 use clap::{Parser, Subcommand};
 use eth_staking_smith::cli::{
-    bls_to_execution_change, existing_mnemonic, new_mnemonic, presigned_exit_message,
+    batch_presigned_exit_message, bls_to_execution_change, existing_mnemonic, new_mnemonic,
+    presigned_exit_message,
 };
 
 #[derive(Parser)]
@@ -23,6 +24,10 @@ enum SubCommands {
     /// Generate presigned exit message which can be sent
     /// to the Beacon Node to start voluntary exit process for the validator
     PresignedExitMessage(presigned_exit_message::PresignedExitMessageSubcommandOpts),
+    /// Generate multiple persigned exit messages from the same mnemonic
+    BatchPresignedExitMessage(
+        batch_presigned_exit_message::BatchPresignedExitMessageSubcommandOpts,
+    ),
 }
 
 impl SubCommands {
@@ -32,6 +37,7 @@ impl SubCommands {
             Self::ExistingMnemonic(sub) => sub.run(),
             Self::NewMnemonic(sub) => sub.run(),
             Self::PresignedExitMessage(sub) => sub.run(),
+            Self::BatchPresignedExitMessage(sub) => sub.run(),
         }
     }
 }
