@@ -44,7 +44,7 @@ pub struct PresignedExitMessageSubcommandOpts {
     pub validator_beacon_index: u32,
 
     /// Epoch number which must be included in the presigned exit message.
-    #[arg(long, visible_alias = "execution_address")]
+    #[arg(long)]
     pub epoch: u64,
 
     /// Path to a custom Eth PoS chain config
