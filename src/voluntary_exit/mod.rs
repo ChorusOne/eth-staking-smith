@@ -1,5 +1,7 @@
 pub(crate) mod operations;
 
+use std::collections::HashMap;
+
 use types::{Epoch, VoluntaryExit};
 
 use crate::key_material::VotingKeyMaterial;
@@ -31,6 +33,35 @@ pub fn voluntary_exit_message_from_mnemonic(
     };
 
     (voluntary_exit, key_material.clone())
+}
+
+pub fn voluntary_exit_message_batch_from_mnemonic(
+    mnemonic_phrase: &[u8],
+    seed_beacon_mapping: HashMap<u32, u32>,
+    epoch: u64,
+) -> (Vec<VoluntaryExit>, Vec<VotingKeyMaterial>) {
+    let (seed, _) = crate::seed::get_eth2_seed(Some(mnemonic_phrase));
+
+    let mut all_materials = vec![];
+    let mut all_messages = vec![];
+
+    for (seed_index, beacon_index) in seed_beacon_mapping {
+        let key_materials =
+            crate::key_material::seed_to_key_material(&seed, 1, seed_index, None, false, None);
+
+        let key_material = key_materials
+            .first()
+            .expect("Error deriving key material from mnemonic");
+        all_materials.push(key_material.clone());
+
+        let voluntary_exit = VoluntaryExit {
+            epoch: Epoch::from(epoch),
+            validator_index: beacon_index as u64,
+        };
+        all_messages.push(voluntary_exit);
+    }
+
+    (all_messages, all_materials)
 }
 
 pub fn voluntary_exit_message_from_secret_key(
