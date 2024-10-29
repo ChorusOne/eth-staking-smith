@@ -48,8 +48,15 @@ Regenerate key and deposit data with existing mnemonic:
 
 ### Example command:
 
+with mnemonic in plain text:
 ```
 ./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
+```
+or with mnemonic as an environment variable `MNEMONIC`:
+
+```
+export MNEMONIC="entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup"
+./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
 ```
 
 ## Using custom testnet config

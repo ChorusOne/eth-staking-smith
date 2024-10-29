@@ -11,10 +11,6 @@ pub struct ExistingMnemonicSubcommandOpts {
     /// 1. Through the MNEMONIC environment variable (recommended)
     ///
     /// 2. Through the --mnemonic argument in plain text.
-    /// It is recommended not to use this
-    /// argument, and wait for the CLI to ask you
-    /// for your mnemonic as otherwise it will
-    /// appear in your shell history.
     #[arg(long, env = "MNEMONIC")]
     pub mnemonic: String,
 
