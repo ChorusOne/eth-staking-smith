@@ -6,11 +6,16 @@ pub struct ExistingMnemonicSubcommandOpts {
     /// The mnemonic that you used to generate your
     /// keys.
     ///
+    /// This can be provided in two ways:
+    ///
+    /// 1. Through the MNEMONIC environment variable (recommended)
+    ///
+    /// 2. Through the --mnemonic argument in plain text.
     /// It is recommended not to use this
     /// argument, and wait for the CLI to ask you
-    ///    for your mnemonic as otherwise it will
-    ///    appear in your shell history.
-    #[arg(long)]
+    /// for your mnemonic as otherwise it will
+    /// appear in your shell history.
+    #[arg(long, env = "MNEMONIC")]
     pub mnemonic: String,
 
     /// The name of Ethereum PoS chain you are targeting.

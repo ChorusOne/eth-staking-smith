@@ -13,7 +13,7 @@ name = "eth_staking_smith"
 path = "src/lib.rs"
 
 [dependencies]
-clap = { version = "^4.5", features = ["derive"] }
+clap = { version = "^4.5", features = ["derive", "env"] }
 ethereum_hashing = "0.6.0"
 eth2_key_derivation = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d"}
 eth2_keystore = { git = "https://github.com/ChorusOne/lighthouse", rev = "1be5253610dc8fee3bf4b7a8dc1d01254bc5b57d"}
