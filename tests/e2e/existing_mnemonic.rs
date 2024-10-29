@@ -14,15 +14,17 @@ use std::{
 };
 
 /*
-    generate 1 validator with existing mnemonic
+    set the MNEMONIC environment variable
+    generate 1 validator without specifying the mnemonic
     (without withdrawal address specified, i.e. the address is derived from the public key)
     (without kdf specified, i.e. pbkdf2 will be used)
 */
 #[test]
-fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
+fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let expected_decryption_password = "testtest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
+    std::env::set_var("MNEMONIC", expected_mnemonic);
     let num_validators = "1";
 
     // test directory
@@ -49,8 +51,6 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(chain);
     cmd.arg("--keystore_password");
     cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
     cmd.arg("--num_validators");
     cmd.arg(num_validators);
 
