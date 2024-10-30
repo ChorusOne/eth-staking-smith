@@ -18,8 +18,12 @@ use std::{
     generate 1 validator without specifying the mnemonic
     (without withdrawal address specified, i.e. the address is derived from the public key)
     (without kdf specified, i.e. pbkdf2 will be used)
+
+    This test is marked is sequential, because it modifies MNEMONIC
+    environment variable state, which can interfere with the rest of the e2e tests.
 */
 #[test]
+#[serial_test::serial]
 fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::error::Error>> {
     let chain = "goerli";
     let expected_decryption_password = "testtest";
@@ -98,6 +102,8 @@ fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::e
 
     // check that pbkdf2 was used if nothing else is specified
     assert_eq!("pbkdf2", parse_kdf_function(keystore));
+
+    std::env::remove_var("MNEMONIC");
 
     Ok(())
 }
