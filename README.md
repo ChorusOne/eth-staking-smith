@@ -48,14 +48,37 @@ Regenerate key and deposit data with existing mnemonic:
 
 ### Example command:
 
-with mnemonic in plain text:
 ```
 ./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
 ```
-or with mnemonic as an environment variable `MNEMONIC`:
+
+
+## Passing mnemonic as environment variable
+
+It is not always desirable to pass mnemonic as CLI argument, because
+it can be either mistakenly recorded in shell history or recorded by
+the monitoring software that could be logging process arguments on host.
+
+This is why all commands that accept `--mnemonic` argument also support
+taking mnemonic as environment variable `MNEMONIC`
+
+For example, `existing-mnemonic` command works like follows with mnemonic in plain text:
+```
+./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --mnemonic "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup" --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
+```
+
+And, as follows with mnemonic as an environment variable `MNEMONIC`:
 
 ```
 export MNEMONIC="entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup"
+./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
+```
+
+Or, it makes possible to have bash prompt for mnemonic with hidden input like follows
+
+```
+echo "Please enter your mnemonic" ; read -s MNEMONIC ; export MNEMONIC
+Please enter your mnemonic
 ./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
 ```
 
@@ -122,8 +145,6 @@ then `--mnemonic` and `--validator-seed-index` may be omitted like follows
 ./target/debug/eth-staking-smith presigned-exit-message --chain mainnet --private-key "0x3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c" --validator_beacon_index 100 --epoch 300000
 ```
 
-
-
 ### Command to send VoluntaryExitMessage request to Beacon node
 
 ```
@@ -133,6 +154,23 @@ then `--mnemonic` and `--validator-seed-index` may be omitted like follows
 
 Notice `--beacon-node-uri` parameter which makes payload to be sent to beacon node
 
+
+### Command to generate batch of presigned exit messages
+
+Sometimes it may be desirable to generate batch of presigned exit messages for the
+validators created from the same mnemonic.
+
+```
+./target/debug/eth-staking-smith batch-presigned-exit-message --chain=mainnet --mnemonic='ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say' --epoch 305658  --seed-beacon-mapping='0:100,2:200'
+```
+
+Instead of accepting single `--validator-seed-index` and `--validator-beacon-index` pair of parameter,
+it takes comma-separated mapping of validator seed index to validator beacon index in `--seed-beacon-mapping`
+parameter. Keys and values in mapping should be separated by colon, so mapping of `0:100,2:200`
+will read as follows
+
+- validator with seed index `0` with given mnemonic has index `100` on beacon chain
+- validator with seed index `1` has beacon index `200`
 
 ## Exporting CLI standard output into common keystores folder format
 

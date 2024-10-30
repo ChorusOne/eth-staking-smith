@@ -46,6 +46,7 @@ pretty_assertions = "^1.4"
 assert_cmd = "2.0"
 predicates = "3.0"
 httpmock = "0.7"
+serial_test = "*"
 
 [[test]]
 name = "e2e-tests"
