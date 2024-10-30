@@ -74,7 +74,7 @@ export MNEMONIC="entire habit bottom mention spoil clown finger wheat motion fox
 ./target/debug/eth-staking-smith existing-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
 ```
 
-Or, it makes possible possible to have bash prompt for mnemonic with hidden input like follows
+Or, it makes possible to have bash prompt for mnemonic with hidden input like follows
 
 ```
 echo "Please enter your mnemonic" ; read -s MNEMONIC ; export MNEMONIC
@@ -155,7 +155,7 @@ then `--mnemonic` and `--validator-seed-index` may be omitted like follows
 Notice `--beacon-node-uri` parameter which makes payload to be sent to beacon node
 
 
-### Command to generate batch of presigned exit messages exit message
+### Command to generate batch of presigned exit messages
 
 Sometimes it may be desirable to generate batch of presigned exit messages for the
 validators created from the same mnemonic.
