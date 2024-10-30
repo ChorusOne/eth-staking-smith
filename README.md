@@ -155,6 +155,23 @@ then `--mnemonic` and `--validator-seed-index` may be omitted like follows
 Notice `--beacon-node-uri` parameter which makes payload to be sent to beacon node
 
 
+### Command to generate batch of presigned exit messages exit message
+
+Sometimes it may be desirable to generate batch of presigned exit messages for the
+validators created from the same mnemonic.
+
+```
+./target/debug/eth-staking-smith batch-presigned-exit-message --chain=mainnet --mnemonic='ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say' --epoch 305658  --seed-beacon-mapping='0:100,2:200'
+```
+
+Instead of accepting single `--validator-seed-index` and `--validator-beacon-index` pair of parameter,
+it takes comma-separated mapping of validator seed index to validator beacon index in `--seed-beacon-mapping`
+parameter. Keys and values in mapping should be separated by colon, so mapping of `0:100,2:200`
+will read as follows
+
+- validator with seed index `0` with given mnemonic has index `100` on beacon chain
+- validator with seed index `1` has beacon index `200`
+
 ## Exporting CLI standard output into common keystores folder format
 
 Most validator clients recognize the keystore folder format,

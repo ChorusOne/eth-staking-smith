@@ -10,10 +10,6 @@ Command sequence to verify signature:
        --chain mainnet \
        --num_validators 3 \
        --mnemonic 'ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say'
-./target/debug/eth-staking-smith existing-mnemonic \
-       --chain mainnet \
-       --num_validators 3 \
-       --mnemonic 'ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say'
 {
   "deposit_data": [
     {
@@ -77,7 +73,7 @@ Command sequence to verify signature:
     "epoch": "305658",
     "validator_index": "200"
   },
-  "signature": "0x8db88aabdd8f03cebba47cf3df7dd5e06ab9a49f57fc209a00cb73c5ecdea192b6ab0c5965ad8e7b6b63b9d397be3df40ea84150f2ed13ca9e0ba382c24f583ca921ff0364f18e51444838992d628623598c7c12122ff46d
+  "signature": "0x8db88aabdd8f03cebba47cf3df7dd5e06ab9a49f57fc209a00cb73c5ecdea192b6ab0c5965ad8e7b6b63b9d397be3df40ea84150f2ed13ca9e0ba382c24f583ca921ff0364f18e51444838992d628623598c7c12122ff46da795c000ae15dd65"
 }
 
 cat offline-preparation.json
