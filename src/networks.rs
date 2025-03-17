@@ -6,6 +6,7 @@ use types::Hash256;
 #[derive(clap::ValueEnum, Clone, Hash, Eq, PartialEq)]
 pub enum SupportedNetworks {
     Mainnet,
+    Hoodi,
     Holesky,
     Gnosis,
     // These are legacy networks they are supported on best effort basis
@@ -17,6 +18,7 @@ impl std::fmt::Display for SupportedNetworks {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             SupportedNetworks::Mainnet => "mainnet",
+            SupportedNetworks::Hoodi => "hoodi",
             SupportedNetworks::Holesky => "holesky",
             SupportedNetworks::Prater => "goerli",
             SupportedNetworks::Goerli => "goerli",
@@ -37,6 +39,9 @@ lazy_static! {
     pub static ref GENESIS_VALIDATORS_ROOT_MAINNET: Hash256 = decode_genesis_validators_root(
         "4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"
     );
+    pub static ref GENESIS_VALIDATORS_ROOT_HOODI: Hash256 = decode_genesis_validators_root(
+        "212f13fc4df078b6cb7db228f1c8307566dcecf900867401a92023d7ba99cb5f"
+    );
     pub static ref GENESIS_VALIDATORS_ROOT_HOLESKY: Hash256 = decode_genesis_validators_root(
         "9143aa7c615a7f7115e2b6aac319c03529df8242ae705fba9df39b79c59fa8b1"
     );
@@ -50,6 +55,10 @@ lazy_static! {
         (
             SupportedNetworks::Mainnet,
             GENESIS_VALIDATORS_ROOT_MAINNET.to_owned()
+        ),
+        (
+            SupportedNetworks::Hoodi,
+            GENESIS_VALIDATORS_ROOT_HOODI.to_owned()
         ),
         (
             SupportedNetworks::Prater,
