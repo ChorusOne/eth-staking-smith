@@ -1,6 +1,5 @@
-use tree_hash::Hash256;
 use types::{
-    ChainSpec, Domain, ForkName, PublicKey, SignedRoot, SignedVoluntaryExit, VoluntaryExit,
+    ChainSpec, Domain, ForkName, Hash256, PublicKey, SignedRoot, SignedVoluntaryExit, VoluntaryExit,
 };
 
 use crate::beacon_node::BeaconNodeExportable;
@@ -29,16 +28,22 @@ impl SignedVoluntaryExitValidator for SignedVoluntaryExit {
     fn validate(self, pubkey: &PublicKey, spec: &ChainSpec, genesis_validators_root: &Hash256) {
         let fork_name = spec.fork_name_at_epoch(self.message.epoch);
         let fork_version = match fork_name {
-            ForkName::Base | ForkName::Altair | ForkName::Merge | ForkName::Capella => {
+            // Updated fork names to match new Lighthouse version
+            ForkName::Base | ForkName::Altair | ForkName::Bellatrix | ForkName::Capella => {
                 spec.fork_version_for_name(fork_name)
             }
-            // EIP-7044
-            ForkName::Deneb => spec.fork_version_for_name(ForkName::Capella),
+            // For newer forks, use Capella fork version for now
+            ForkName::Deneb | ForkName::Electra | ForkName::Fulu => {
+                spec.fork_version_for_name(ForkName::Capella)
+            }
         };
+        
+        // Convert Hash256 to the type expected by compute_domain
+        let genesis_validators_root_clone = *genesis_validators_root;
         let domain = spec.compute_domain(
             Domain::VoluntaryExit,
             fork_version,
-            *genesis_validators_root,
+            genesis_validators_root_clone,
         );
 
         let voluntary_exit: VoluntaryExit = VoluntaryExit {

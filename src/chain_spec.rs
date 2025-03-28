@@ -7,18 +7,57 @@ use crate::{networks::SupportedNetworks, DepositError};
 
 pub fn chain_spec_for_network(network: &SupportedNetworks) -> Result<ChainSpec, DepositError> {
     let network_name = network.to_string();
-    if ["goerli", "prater", "mainnet", "holesky", "hoodi"].contains(&network_name.as_str()) {
-        Ok(Eth2NetworkConfig::constant(&network_name)
-            .unwrap()
-            .unwrap()
-            .chain_spec::<MainnetEthSpec>()
-            .unwrap())
+    if ["prater", "mainnet", "holesky", "hoodi"].contains(&network_name.as_str()) {
+        // Add debugging information
+        println!("Loading network: {}", network_name);
+        match Eth2NetworkConfig::constant(&network_name) {
+            Ok(Some(net_config)) => match net_config.chain_spec::<MainnetEthSpec>() {
+                Ok(spec) => Ok(spec),
+                Err(e) => {
+                    println!("Error creating chain spec: {:?}", e);
+                    Err(DepositError::InvalidNetworkName(format!(
+                        "error creating chain spec for {network_name}: {e:?}"
+                    )))
+                }
+            },
+            Ok(None) => {
+                println!("Network not found: {}", network_name);
+                Err(DepositError::InvalidNetworkName(format!(
+                    "network not found: {network_name}"
+                )))
+            },
+            Err(e) => {
+                println!("Network configuration error: {}: {}", network_name, e);
+                Err(DepositError::InvalidNetworkName(format!(
+                    "network configuration error: {network_name}: {e}"
+                )))
+            }
+        }
     } else if network_name.as_str() == "gnosis" {
-        Ok(Eth2NetworkConfig::constant(&network_name)
-            .unwrap()
-            .unwrap()
-            .chain_spec::<GnosisEthSpec>()
-            .unwrap())
+        println!("Loading network: {}", network_name);
+        match Eth2NetworkConfig::constant(&network_name) {
+            Ok(Some(net_config)) => match net_config.chain_spec::<GnosisEthSpec>() {
+                Ok(spec) => Ok(spec),
+                Err(e) => {
+                    println!("Error creating chain spec: {:?}", e);
+                    Err(DepositError::InvalidNetworkName(format!(
+                        "error creating chain spec for {network_name}: {e:?}"
+                    )))
+                }
+            },
+            Ok(None) => {
+                println!("Network not found: {}", network_name);
+                Err(DepositError::InvalidNetworkName(format!(
+                    "network not found: {network_name}"
+                )))
+            },
+            Err(e) => {
+                println!("Network configuration error: {}: {}", network_name, e);
+                Err(DepositError::InvalidNetworkName(format!(
+                    "network configuration error: {network_name}: {e}"
+                )))
+            }
+        }
     } else {
         Err(DepositError::InvalidNetworkName(format!(
             "unknown chain name: {network_name}"

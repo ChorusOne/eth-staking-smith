@@ -20,7 +20,7 @@ fn it_generates_signed_bls_to_execution_change() {
     fn withdrawal_creds_from_pk(withdrawal_pk: &PublicKey) -> String {
         let withdrawal_creds = utils::get_withdrawal_credentials(&withdrawal_pk.into(), 0);
         let credentials_hash = Hash256::from_slice(&withdrawal_creds);
-        hex::encode(&credentials_hash.as_bytes())
+        hex::encode(&credentials_hash.as_slice())
     }
 
     let (bls_to_execution_change, keypair) =
@@ -47,7 +47,7 @@ fn it_generates_signed_bls_to_execution_change() {
     assert_eq!(100, validator_index);
     assert_eq!(
         EXECUTION_WITHDRAWAL_ADDRESS.to_lowercase(),
-        format!("0x{}", hex::encode(to_execution_address.as_bytes())),
+        format!("0x{}", hex::encode(to_execution_address)),
     );
     assert_eq!(
         "00e078f11bc1454244bdf9f63a3b997815f081dd6630204186d4c9627a2942f7",

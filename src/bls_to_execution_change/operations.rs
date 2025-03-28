@@ -66,10 +66,12 @@ impl SignedBlsToExecutionChangeValidator for SignedBlsToExecutionChange {
         );
 
         // verify signature
+        // Clone the genesis_validators_root to match expected type
+        let genesis_validators_root_clone = *genesis_validators_root;
         let domain = spec.compute_domain(
             Domain::BlsToExecutionChange,
             spec.genesis_fork_version,
-            *genesis_validators_root,
+            genesis_validators_root_clone,
         );
 
         let bls_to_execution_change: BlsToExecutionChange = BlsToExecutionChange {

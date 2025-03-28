@@ -1,0 +1,143 @@
+{
+  "deposit_data": [
+    {
+      "amount": 32000000000,
+      "deposit_cli_version": "2.7.0",
+      "deposit_data_root": "f5a94ead829115a05c4c106fbeffabfda3165ef12bf6fd828fa11f1185e68685",
+      "deposit_message_root": "dc224ac1c94d70906d643644f20398bdea5dabea123116a9d6135b8f5f4906bd",
+      "fork_version": "01017000",
+      "network_name": "holesky",
+      "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+      "signature": "8126a4b15cd1df7720eb39d170fd4c223f0013f0951aa384c2fa476fda74ee959a9f3295b891f1df194f0f63f958120c0c67f54b6510db8317313eeddf87cc00dbe6726a32782b57781f452e9c35357e9f73d76fb22bbfd397ec2a353aaec7eb",
+      "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001"
+    },
+    {
+      "amount": 32000000000,
+      "deposit_cli_version": "2.7.0",
+      "deposit_data_root": "2858207f9a3ffc2e5fc536b393d68528087274e62f779b5fc83a39056570fed8",
+      "deposit_message_root": "2afa13256b88cab0b9ad2da94a5b7800b81a6747fb92a482393f58cda4a1a76a",
+      "fork_version": "01017000",
+      "network_name": "holesky",
+      "pubkey": "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a",
+      "signature": "955a50611f4b9c4bf4941fec33e33d5b2afd033593bdc18d56a743ad50c7b8fa2df8755471f5674742054e7e77a414dc0ecd639903d2cc821f884086066b94475bff5882ae227e041da2915111c0334e2af59e1d1d10efcafe94022ffaaaa08f",
+      "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001"
+    },
+    {
+      "amount": 32000000000,
+      "deposit_cli_version": "2.7.0",
+      "deposit_data_root": "5ab7ec6c77afaea3e2aa4bd2313bd870e56be6289ebb8367b39e4d5bac5495e6",
+      "deposit_message_root": "9a5ac5586049227ae4677b20502f99cf8413ac40b481d13b9620011aaa641874",
+      "fork_version": "01017000",
+      "network_name": "holesky",
+      "pubkey": "8bf0a669a51d0cb6ff745e4b0aa7c41e8de8d179ff9267977e76c7188aaa2fb1b8b1bdfefcc545d9efdac0b4bc2239e6",
+      "signature": "a2ea3a7529d5dacfe8ee59ca0505bd23457cb2ae257df0e72b35c32901c2b4c7366b219bcf0a2d4be6a56f2e983cda960a5c24c44907dfdbc34ed1a1b677205f5f4502f5a661ff66bb4fb55239ff39f93f6ef66b64799cb984cf24a886454d6e",
+      "withdrawal_credentials": "0100000000000000000000000000000000000000000000000000000000000001"
+    }
+  ],
+  "keystores": [
+    {
+      "crypto": {
+        "checksum": {
+          "function": "sha256",
+          "message": "c4710770387b5051cdca385f32a82abe993ef29b4fba398b5040bab7b7ec603c",
+          "params": {}
+        },
+        "cipher": {
+          "function": "aes-128-ctr",
+          "message": "fb35df1224b0da01589528ed0942261be9bca3128d893fe187da7294dc04fbb3",
+          "params": {
+            "iv": "ab1a0da07b3208fd152aad2a72bbe905"
+          }
+        },
+        "kdf": {
+          "function": "pbkdf2",
+          "message": "",
+          "params": {
+            "c": 262144,
+            "dklen": 32,
+            "prf": "hmac-sha256",
+            "salt": "42d916cad46cc159f10848b377e748bd2c7321930971c3d5d9a88794f37c830b"
+          }
+        }
+      },
+      "description": "",
+      "name": null,
+      "path": "m/12381/3600/0/0/0",
+      "pubkey": "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+      "uuid": "d74b2d09-c232-4629-9d45-5ef016c579bd",
+      "version": 4
+    },
+    {
+      "crypto": {
+        "checksum": {
+          "function": "sha256",
+          "message": "842c7b5442902572bb445aba67fbaf4a6212c5443b446b326cf7b66b5a70bf7b",
+          "params": {}
+        },
+        "cipher": {
+          "function": "aes-128-ctr",
+          "message": "54440587d48ffaf05dde382130d4190df6368523cd25c017304d7757ef3d35c9",
+          "params": {
+            "iv": "29dd3b79c586b0be71cfcb17e93f8033"
+          }
+        },
+        "kdf": {
+          "function": "pbkdf2",
+          "message": "",
+          "params": {
+            "c": 262144,
+            "dklen": 32,
+            "prf": "hmac-sha256",
+            "salt": "42d916cad46cc159f10848b377e748bd2c7321930971c3d5d9a88794f37c830b"
+          }
+        }
+      },
+      "description": "",
+      "name": null,
+      "path": "m/12381/3600/1/0/0",
+      "pubkey": "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a",
+      "uuid": "5a69ec80-d8f2-45bb-a799-73cf80f49d95",
+      "version": 4
+    },
+    {
+      "crypto": {
+        "checksum": {
+          "function": "sha256",
+          "message": "528a69128b2b1ec502d95e25edadee14c81b6a0700f408d7ca5e2d9af7e09874",
+          "params": {}
+        },
+        "cipher": {
+          "function": "aes-128-ctr",
+          "message": "68dcccf8c798406a2af38414a6857c66afd1bae46ed161bae5385ad1778a77f4",
+          "params": {
+            "iv": "5ee4358fa777f337743ce2216c943fd7"
+          }
+        },
+        "kdf": {
+          "function": "pbkdf2",
+          "message": "",
+          "params": {
+            "c": 262144,
+            "dklen": 32,
+            "prf": "hmac-sha256",
+            "salt": "42d916cad46cc159f10848b377e748bd2c7321930971c3d5d9a88794f37c830b"
+          }
+        }
+      },
+      "description": "",
+      "name": null,
+      "path": "m/12381/3600/2/0/0",
+      "pubkey": "8bf0a669a51d0cb6ff745e4b0aa7c41e8de8d179ff9267977e76c7188aaa2fb1b8b1bdfefcc545d9efdac0b4bc2239e6",
+      "uuid": "3a037ced-2324-4a2f-b5e9-759b49453f49",
+      "version": 4
+    }
+  ],
+  "mnemonic": {
+    "seed": "entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup"
+  },
+  "private_keys": [
+    "3f3e0a69a6a66aeaec606a2ccb47c703afb2e8ae64f70a1650c03343b06e8f0c",
+    "5b17290ac4e36c497378351ed61253a239d408466918fe5a8dd79b28ef67f9df",
+    "1cb46382c3c046f7817298d1ad3454a7175be6e53059bdd287e8fcbf4c6fb2e8"
+  ]
+}
