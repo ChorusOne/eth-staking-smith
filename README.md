@@ -24,7 +24,7 @@ Why we need yet another keystore / deposit tool:
 cargo build
 ```
 
-## New mnemonic 
+## New mnemonic
 
 Generate key and deposit data with a new mnemonic:
 
@@ -38,7 +38,7 @@ Generate key and deposit data with a new mnemonic:
 ./target/debug/eth-staking-smith new-mnemonic --chain mainnet --keystore_password testtest --num_validators 1
 ```
 
-## Existing mnemonic 
+## Existing mnemonic
 
 Regenerate key and deposit data with existing mnemonic:
 
@@ -93,11 +93,11 @@ with that config as value, and omit `--chain` parameter:
 ./target/debug/eth-staking-smith new-mnemonic --testnet_config /etc/privatenet/config.yaml --keystore_password testtest --num_validators 1 --withdrawal_credentials "0x0100000000000000000000000000000000000000000000000000000000000001"
 ```
 
-## Converting your BLS 0x00 withdrawal address 
+## Converting your BLS 0x00 withdrawal address
 
 Ethereum will be implementing a push-based approach for withdrawals, see [EIP-4895 docs](https://eips.ethereum.org/EIPS/eip-4895).
 
-Those who have configured a BLS withdrawal address (0x00) in the validators deposit contract, will have to undergo the following steps: 
+Those who have configured a BLS withdrawal address (0x00) in the validators deposit contract, will have to undergo the following steps:
 1. generate a signed message to trigger BLS to execution address
 2. send the signed message to the beacon node
 
@@ -208,18 +208,18 @@ lighthouse account validator import \
 ```
 
 
-# Implementation Details 
+# Implementation Details
 To avoid heavy lifting, we're interfacing [Lighthouse account manager](https://github.com/sigp/lighthouse/blob/stable/account_manager), but optimizing it in a way so all operations are done in memory and key material is never written to filesystem during the generation to cater for our use case.
 
 ## Entropy gathering
 When you run the command `new-mnemonic` a new mnemonic is generated from a seed. Entropy collection for the given seed is done by using the platform dependent `getrandom(2)` system call. On Linux, getrandom(2) pulls entropy from cryptographically secure RNG provided by Linux kernel, which implements ChaCha based PRNG algorithm that reseeds itself from multiple hardware TRNG sources with 300Hz frequency. If you're running on anything other than Linux, look up target platform implementation in https://github.com/rust-random/getrandom for details.
 
 ## Ability to tweak performance parameters
-Specifically, we have two arguments you may use for improving performance during key generation: 
+Specifically, we have two arguments you may use for improving performance during key generation:
 1. You can opt-out of generating keystores by omitting the optional `--keystore_password` argument. Depending on how you manage your keys you would either store them as keystore files or simply store the private keys in vault. If you're doing the latter it would be more optimal for you to bypass the keystore generation and only retrieve the private keys such that you can store them in vault.
 2. To speed up the process of keystore generation, you may want to choose your key derivation function depending on your use case with `scrypt` with higher security parameters and slower performance vs `pbkdf2` achieving better performance with lower security parameters compared to `scrypt`.
 
-# Testing 
+# Testing
 
 ```
 cargo test

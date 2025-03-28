@@ -37,14 +37,14 @@ pub(crate) fn get_withdrawal_credentials(pubkey: &PublicKeyBytes, prefix_byte: u
     let pubkey_hex = pubkey_str.strip_prefix("0x").unwrap_or(&pubkey_str);
     // Parse the hex to get the actual bytes
     let pubkey_bytes = hex::decode(pubkey_hex).unwrap();
-    
+
     // Now hash these bytes
     let hashed = ethereum_hashing::hash(&pubkey_bytes);
-    
+
     // Create withdrawal credentials with the prefix
     let mut prefixed = vec![prefix_byte];
     prefixed.extend_from_slice(&hashed[1..]);
-    
+
     prefixed
 }
 
@@ -53,7 +53,6 @@ pub(crate) fn get_withdrawal_credentials(pubkey: &PublicKeyBytes, prefix_byte: u
 /// Used for deriving withdrawal from the validator BLS key pair
 pub fn withdrawal_creds_from_pk(withdrawal_pk: &PublicKeyBytes) -> String {
     let withdrawal_creds = get_withdrawal_credentials(withdrawal_pk, 0);
-    // Direct hex encode without converting to Hash256
     hex::encode(withdrawal_creds)
 }
 

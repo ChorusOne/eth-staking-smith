@@ -28,8 +28,7 @@ impl SignedVoluntaryExitValidator for SignedVoluntaryExit {
     fn validate(self, pubkey: &PublicKey, spec: &ChainSpec, genesis_validators_root: &Hash256) {
         let fork_name = spec.fork_name_at_epoch(self.message.epoch);
         let fork_version = match fork_name {
-            // Updated fork names to match new Lighthouse version
-            ForkName::Base | ForkName::Altair | ForkName::Bellatrix | ForkName::Capella => {
+                        ForkName::Base | ForkName::Altair | ForkName::Bellatrix | ForkName::Capella => {
                 spec.fork_version_for_name(fork_name)
             }
             // For newer forks, use Capella fork version for now
@@ -37,13 +36,11 @@ impl SignedVoluntaryExitValidator for SignedVoluntaryExit {
                 spec.fork_version_for_name(ForkName::Capella)
             }
         };
-        
-        // Convert Hash256 to the type expected by compute_domain
-        let genesis_validators_root_clone = *genesis_validators_root;
+
         let domain = spec.compute_domain(
             Domain::VoluntaryExit,
             fork_version,
-            genesis_validators_root_clone,
+            *genesis_validators_root,
         );
 
         let voluntary_exit: VoluntaryExit = VoluntaryExit {

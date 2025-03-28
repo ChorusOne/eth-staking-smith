@@ -9,9 +9,7 @@ pub enum SupportedNetworks {
     Hoodi,
     Holesky,
     Gnosis,
-    // These are legacy networks they are supported on best effort basis
-    Prater,
-    Goerli,
+    Sepolia,
 }
 
 impl std::fmt::Display for SupportedNetworks {
@@ -20,10 +18,8 @@ impl std::fmt::Display for SupportedNetworks {
             SupportedNetworks::Mainnet => "mainnet",
             SupportedNetworks::Hoodi => "hoodi",
             SupportedNetworks::Holesky => "holesky",
-            // Note: Lighthouse 664a8fa and later uses prater, not goerli
-            SupportedNetworks::Prater => "prater",
-            SupportedNetworks::Goerli => "prater",
             SupportedNetworks::Gnosis => "gnosis",
+            SupportedNetworks::Sepolia => "sepolia",
         };
         write!(f, "{}", s)
     }
@@ -46,8 +42,8 @@ lazy_static! {
     pub static ref GENESIS_VALIDATORS_ROOT_HOLESKY: Hash256 = decode_genesis_validators_root(
         "9143aa7c615a7f7115e2b6aac319c03529df8242ae705fba9df39b79c59fa8b1"
     );
-    pub static ref GENESIS_VALIDATORS_ROOT_GOERLI: Hash256 = decode_genesis_validators_root(
-        "043db0d9a83813551ee2f33450d23797757d430911a9320530ad8a0eabc43efb"
+    pub static ref GENESIS_VALIDATORS_ROOT_SEPOLIA: Hash256 = decode_genesis_validators_root(
+        "d8ea171f3c94aea21ebc42a1ed61052acf3f9209c00e4efbaaddac09ed9b8078"
     );
     pub static ref GENESIS_VALIDATORS_ROOT_GNOSIS: Hash256 = decode_genesis_validators_root(
         "f5dcb5564e829aab27264b9becd5dfaa017085611224cb3036f573368dbb9d47"
@@ -62,12 +58,8 @@ lazy_static! {
             GENESIS_VALIDATORS_ROOT_HOODI.to_owned()
         ),
         (
-            SupportedNetworks::Prater,
-            GENESIS_VALIDATORS_ROOT_GOERLI.to_owned()
-        ),
-        (
-            SupportedNetworks::Goerli,
-            GENESIS_VALIDATORS_ROOT_GOERLI.to_owned()
+            SupportedNetworks::Sepolia,
+            GENESIS_VALIDATORS_ROOT_SEPOLIA.to_owned()
         ),
         (
             SupportedNetworks::Holesky,

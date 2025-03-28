@@ -91,20 +91,22 @@ impl PresignedExitMessageSubcommandOpts {
             },
         );
 
-        let (voluntary_exit, key_material) = if self.mnemonic.is_some() {
-            voluntary_exit::voluntary_exit_message_from_mnemonic(
-                self.mnemonic.clone().unwrap().as_bytes(),
-                self.validator_seed_index.unwrap() as u64,
-                self.validator_beacon_index as u64,
-                self.epoch,
-            )
-        } else {
+        let (voluntary_exit, key_material) = if self.private_key.is_some() {
+            // Use private key path when available
             let secret_key_str = self.private_key.clone().unwrap();
             let secret_key_bytes =
                 hex::decode(secret_key_str.strip_prefix("0x").unwrap_or(&secret_key_str))
                     .expect("Invalid private key hex input");
             voluntary_exit::voluntary_exit_message_from_secret_key(
                 secret_key_bytes.as_slice(),
+                self.validator_beacon_index as u64,
+                self.epoch,
+            )
+        } else {
+            // Use mnemonic path
+            voluntary_exit::voluntary_exit_message_from_mnemonic(
+                self.mnemonic.clone().unwrap().as_bytes(),
+                self.validator_seed_index.expect("validator_seed_index must be provided when using a mnemonic") as u64,
                 self.validator_beacon_index as u64,
                 self.epoch,
             )
