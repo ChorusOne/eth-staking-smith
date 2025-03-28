@@ -1,6 +1,5 @@
 use assert_cmd::prelude::*;
 use eth_staking_smith::utils::withdrawal_creds_from_pk;
-use ssz::Encode;
 use std::process::Command;
 use types::SignedBlsToExecutionChange;
 
@@ -81,7 +80,7 @@ fn test_bls_to_execution_change() -> Result<(), Box<dyn std::error::Error>> {
         "0xb9e6fcdf66962fbaeec762908e7c986c154ba2274fdfe307603d71c465acda49af98a75aa62743fc59a71e678fccd433164247130c1cede0832a17cc61fc21204ec83c7f8fd76848d6520805939547b4c677fca85f98d1f749c428814fd6a6c5",
         format!(
             "0x{}",
-            hex::encode(signed_bls_to_execution_change.signature.as_ssz_bytes()),
+            hex::encode(signed_bls_to_execution_change.signature.to_string().strip_prefix("0x").unwrap()),
         )
     );
 

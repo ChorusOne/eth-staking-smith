@@ -129,7 +129,7 @@ mod test {
     fn withdrawal_creds_from_pk(withdrawal_pk: &PublicKey) -> String {
         let withdrawal_creds = utils::get_withdrawal_credentials(&withdrawal_pk.into(), 0);
         let credentials_hash = Hash256::from_slice(&withdrawal_creds);
-        hex::encode(&credentials_hash.as_bytes())
+        hex::encode(&credentials_hash.as_slice())
     }
     fn parse_kdf_function(keystore: &Keystore) -> String {
         let keystore_json: JsonKeystore = serde_json::from_str(&keystore.to_json_string().unwrap())

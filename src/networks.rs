@@ -20,8 +20,9 @@ impl std::fmt::Display for SupportedNetworks {
             SupportedNetworks::Mainnet => "mainnet",
             SupportedNetworks::Hoodi => "hoodi",
             SupportedNetworks::Holesky => "holesky",
-            SupportedNetworks::Prater => "goerli",
-            SupportedNetworks::Goerli => "goerli",
+            // Note: Lighthouse 664a8fa and later uses prater, not goerli
+            SupportedNetworks::Prater => "prater",
+            SupportedNetworks::Goerli => "prater",
             SupportedNetworks::Gnosis => "gnosis",
         };
         write!(f, "{}", s)
