@@ -169,8 +169,8 @@ mod test {
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
 
         let expected_pub_keys = [
-            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",  
-            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a", 
+            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a",
             "8bf0a669a51d0cb6ff745e4b0aa7c41e8de8d179ff9267977e76c7188aaa2fb1b8b1bdfefcc545d9efdac0b4bc2239e6"
         ];
 
@@ -220,8 +220,8 @@ mod test {
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
 
         let expected_pub_keys = [
-            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",  
-            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a", 
+            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a",
             "8bf0a669a51d0cb6ff745e4b0aa7c41e8de8d179ff9267977e76c7188aaa2fb1b8b1bdfefcc545d9efdac0b4bc2239e6"
         ];
 
@@ -288,7 +288,7 @@ mod test {
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
 
         let expected_pub_keys = [
-            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a", 
+            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a",
             "8bf0a669a51d0cb6ff745e4b0aa7c41e8de8d179ff9267977e76c7188aaa2fb1b8b1bdfefcc545d9efdac0b4bc2239e6"
         ];
 
@@ -339,8 +339,8 @@ mod test {
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
 
         let expected_pub_keys = [
-            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",  
-            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a", 
+            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a",
             "8bf0a669a51d0cb6ff745e4b0aa7c41e8de8d179ff9267977e76c7188aaa2fb1b8b1bdfefcc545d9efdac0b4bc2239e6"
         ];
 
@@ -392,8 +392,8 @@ mod test {
         // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: minimal
 
         let expected_pub_keys = [
-            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",  
-            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a", 
+            "8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6",
+            "974ec5bce4653f1f440ad07c5b363ad3b1616520e9680ff837f9ff7a8c10e3cc67dd49aa5089f714ed45d7ad56bc758a",
             "8bf0a669a51d0cb6ff745e4b0aa7c41e8de8d179ff9267977e76c7188aaa2fb1b8b1bdfefcc545d9efdac0b4bc2239e6"
         ];
 
