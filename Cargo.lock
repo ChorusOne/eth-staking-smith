@@ -772,7 +772,7 @@ dependencies = [
 [[package]]
 name = "bls"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "alloy-primitives",
  "arbitrary",
@@ -994,7 +994,7 @@ checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 [[package]]
 name = "compare_fields"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "itertools 0.10.5",
 ]
@@ -1002,7 +1002,7 @@ dependencies = [
 [[package]]
 name = "compare_fields_derive"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -1752,7 +1752,7 @@ dependencies = [
 [[package]]
 name = "eth2_config"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "paste",
  "types",
@@ -1761,7 +1761,7 @@ dependencies = [
 [[package]]
 name = "eth2_interop_keypairs"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "bls",
  "ethereum_hashing 0.7.0",
@@ -1774,7 +1774,7 @@ dependencies = [
 [[package]]
 name = "eth2_key_derivation"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "bls",
  "num-bigint-dig",
@@ -1786,7 +1786,7 @@ dependencies = [
 [[package]]
 name = "eth2_keystore"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "aes 0.7.5",
  "bls",
@@ -1808,7 +1808,7 @@ dependencies = [
 [[package]]
 name = "eth2_network_config"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "bytes",
  "discv5",
@@ -1829,7 +1829,7 @@ dependencies = [
 [[package]]
 name = "eth2_wallet"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "eth2_key_derivation",
  "eth2_keystore",
@@ -2071,7 +2071,7 @@ dependencies = [
 [[package]]
 name = "fixed_bytes"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "alloy-primitives",
  "safe_arith",
@@ -2811,7 +2811,7 @@ dependencies = [
 [[package]]
 name = "int_to_bytes"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "bytes",
 ]
@@ -2960,7 +2960,7 @@ dependencies = [
 [[package]]
 name = "kzg"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "arbitrary",
  "c-kzg",
@@ -3186,7 +3186,7 @@ dependencies = [
 [[package]]
 name = "logging"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "chrono",
  "metrics",
@@ -3247,7 +3247,7 @@ dependencies = [
 [[package]]
 name = "merkle_proof"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "alloy-primitives",
  "ethereum_hashing 0.7.0",
@@ -3281,7 +3281,7 @@ dependencies = [
 [[package]]
 name = "metrics"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "prometheus",
 ]
@@ -3866,7 +3866,7 @@ dependencies = [
 [[package]]
 name = "pretty_reqwest_error"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "reqwest",
  "sensitive_url",
@@ -4405,7 +4405,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 [[package]]
 name = "safe_arith"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 
 [[package]]
 name = "salsa20"
@@ -4541,7 +4541,7 @@ dependencies = [
 [[package]]
 name = "sensitive_url"
 version = "0.1.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "serde",
  "url",
@@ -4980,7 +4980,7 @@ dependencies = [
 [[package]]
 name = "swap_or_not_shuffle"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "alloy-primitives",
  "ethereum_hashing 0.7.0",
@@ -5114,7 +5114,7 @@ dependencies = [
 [[package]]
 name = "test_random_derive"
 version = "0.2.0"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -5511,7 +5511,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 [[package]]
 name = "types"
 version = "0.2.1"
-source = "git+https://github.com/ChorusOne/lighthouse?rev=f335354dff78dcc9d2e0fdb491f342fc7a9044fa#f335354dff78dcc9d2e0fdb491f342fc7a9044fa"
+source = "git+https://github.com/ChorusOne/lighthouse?rev=664a8fae9650ecba457fccbb561c5c0d6c270e3b#664a8fae9650ecba457fccbb561c5c0d6c270e3b"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
