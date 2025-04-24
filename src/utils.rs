@@ -30,18 +30,7 @@ pub(crate) fn scrypt() -> Kdf {
 ///
 /// Used for submitting deposits to the Eth1 deposit contract.
 pub(crate) fn get_withdrawal_credentials(pubkey: &PublicKeyBytes, prefix_byte: u8) -> Vec<u8> {
-    // Since we can't directly access PublicKeyBytes bytes nor use bls::get_withdrawal_credentials,
-    // we'll serialize the pubkey to string and then parse it from hex
-    let pubkey_str = pubkey.to_string();
-    // Remove 0x prefix if present
-    let pubkey_hex = pubkey_str.strip_prefix("0x").unwrap_or(&pubkey_str);
-    // Parse the hex to get the actual bytes
-    let pubkey_bytes = hex::decode(pubkey_hex).unwrap();
-
-    // Now hash these bytes
-    let hashed = ethereum_hashing::hash(&pubkey_bytes);
-
-    // Create withdrawal credentials with the prefix
+    let hashed = ethereum_hashing::hash(&pubkey.as_serialized());
     let mut prefixed = vec![prefix_byte];
     prefixed.extend_from_slice(&hashed[1..]);
 
