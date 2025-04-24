@@ -11,43 +11,31 @@ pub fn chain_spec_for_network(network: &SupportedNetworks) -> Result<ChainSpec, 
         match Eth2NetworkConfig::constant(&network_name) {
             Ok(Some(net_config)) => match net_config.chain_spec::<MainnetEthSpec>() {
                 Ok(spec) => Ok(spec),
-                Err(e) => {
-                    Err(DepositError::InvalidNetworkName(format!(
-                        "error creating chain spec for {network_name}: {e:?}"
-                    )))
-                }
+                Err(e) => Err(DepositError::InvalidNetworkName(format!(
+                    "error creating chain spec for {network_name}: {e:?}"
+                ))),
             },
-            Ok(None) => {
-                Err(DepositError::InvalidNetworkName(format!(
-                    "network not found: {network_name}"
-                )))
-            },
-            Err(e) => {
-                Err(DepositError::InvalidNetworkName(format!(
-                    "network configuration error: {network_name}: {e}"
-                )))
-            }
+            Ok(None) => Err(DepositError::InvalidNetworkName(format!(
+                "network not found: {network_name}"
+            ))),
+            Err(e) => Err(DepositError::InvalidNetworkName(format!(
+                "network configuration error: {network_name}: {e}"
+            ))),
         }
     } else if network_name.as_str() == "gnosis" {
         match Eth2NetworkConfig::constant(&network_name) {
             Ok(Some(net_config)) => match net_config.chain_spec::<GnosisEthSpec>() {
                 Ok(spec) => Ok(spec),
-                Err(e) => {
-                    Err(DepositError::InvalidNetworkName(format!(
-                        "error creating chain spec for {network_name}: {e:?}"
-                    )))
-                }
+                Err(e) => Err(DepositError::InvalidNetworkName(format!(
+                    "error creating chain spec for {network_name}: {e:?}"
+                ))),
             },
-            Ok(None) => {
-                Err(DepositError::InvalidNetworkName(format!(
-                    "network not found: {network_name}"
-                )))
-            },
-            Err(e) => {
-                Err(DepositError::InvalidNetworkName(format!(
-                    "network configuration error: {network_name}: {e}"
-                )))
-            }
+            Ok(None) => Err(DepositError::InvalidNetworkName(format!(
+                "network not found: {network_name}"
+            ))),
+            Err(e) => Err(DepositError::InvalidNetworkName(format!(
+                "network configuration error: {network_name}: {e}"
+            ))),
         }
     } else {
         Err(DepositError::InvalidNetworkName(format!(

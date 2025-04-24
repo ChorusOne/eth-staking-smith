@@ -28,7 +28,7 @@ impl SignedVoluntaryExitValidator for SignedVoluntaryExit {
     fn validate(self, pubkey: &PublicKey, spec: &ChainSpec, genesis_validators_root: &Hash256) {
         let fork_name = spec.fork_name_at_epoch(self.message.epoch);
         let fork_version = match fork_name {
-                        ForkName::Base | ForkName::Altair | ForkName::Bellatrix | ForkName::Capella => {
+            ForkName::Base | ForkName::Altair | ForkName::Bellatrix | ForkName::Capella => {
                 spec.fork_version_for_name(fork_name)
             }
             // For newer forks, use Capella fork version for now

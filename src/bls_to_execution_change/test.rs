@@ -55,7 +55,10 @@ fn it_generates_signed_bls_to_execution_change_hoodi() {
     );
 
     // Print the signature for debugging
-    println!("Hoodi BLS signature: {}", signed_bls_to_execution_change.signature);
+    println!(
+        "Hoodi BLS signature: {}",
+        signed_bls_to_execution_change.signature
+    );
 }
 
 #[test]

@@ -17,11 +17,14 @@ impl DepositDataJson {
     // Helper method to get the Sepolia signature for the specific public key
     pub fn expected_sepolia_signature(&self) -> String {
         // For test_deposit_data_keystore_mnemonic_as_env_var, test_keystore_kdf_pbkdf2, test_keystore_kdf_scrypt
-        if self.pubkey.contains("8844cebb34d10e0e57f3c29ada375dafe14762ab85b2e408c3d6d55ce6d03317") {
+        if self
+            .pubkey
+            .contains("8844cebb34d10e0e57f3c29ada375dafe14762ab85b2e408c3d6d55ce6d03317")
+        {
             return "8c4d00c6b7eb2a98bbc7dd73caca35f4bc39c233d673920764eb6a77c173c38e1e0987972aa31d3001ef15d513900d39058926828c93f754f6f8028bdcb60e4f71e2cb270c5b2c772b7aa5f6c67acfed4878c1c55b0bf9a44d34da29d0719fd4".to_string();
         }
 
-        // For test_withdrawal_address_execution, test_withdrawal_credentials_execution 
+        // For test_withdrawal_address_execution, test_withdrawal_credentials_execution
         if self.pubkey.contains("ae9b608055594725fc1653e2c3e4a50dff2a30e7db0bb70d913c338de5bf8db8481cd28128ec7581fe87759683b94311") {
             return "b1b8fe05cdd73003849d61c054f3189dc9a22c5539d6c50efad00157beb30971a38102890fadce10c6355ea023e8df341190e22838e0740a70958f988cbbc4d3ac3c00206b85fa52885b4f52ec92daf84f19432bd608cd8ffa61e78df57da273".to_string();
         }
