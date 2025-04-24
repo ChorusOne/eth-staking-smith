@@ -1,7 +1,7 @@
 use eth2_keystore::json_keystore::{HexBytes, Kdf, Pbkdf2, Prf, Scrypt};
 use eth2_keystore::{DKLEN, SALT_SIZE};
 use regex::Regex;
-use types::{PublicKeyBytes};
+use types::PublicKeyBytes;
 
 pub(crate) fn pbkdf2() -> Kdf {
     let mut salt = vec![0u8; SALT_SIZE];

@@ -106,7 +106,9 @@ impl PresignedExitMessageSubcommandOpts {
             // Use mnemonic path
             voluntary_exit::voluntary_exit_message_from_mnemonic(
                 self.mnemonic.clone().unwrap().as_bytes(),
-                self.validator_seed_index.expect("validator_seed_index must be provided when using a mnemonic") as u64,
+                self.validator_seed_index
+                    .expect("validator_seed_index must be provided when using a mnemonic")
+                    as u64,
                 self.validator_beacon_index as u64,
                 self.epoch,
             )
