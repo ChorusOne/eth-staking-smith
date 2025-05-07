@@ -195,6 +195,20 @@ license-files = [
 ]
 
 [[licenses.clarify]]
+crate = "metrics"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+[[licenses.clarify]]
+crate = "fixed_bytes"
+expression = "Apache-2.0"
+license-files = [
+    { path = "../../LICENSE", hash = 0x001c7e6c },
+]
+
+[[licenses.clarify]]
 crate = "ring"
 # SPDX considers OpenSSL to encompass both the OpenSSL and SSLeay licenses
 # https://spdx.org/licenses/OpenSSL.html
