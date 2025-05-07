@@ -20,7 +20,8 @@ allow = [
     "BSD-2-Clause",
     "Zlib",
     "MPL-2.0",
-    "OpenSSL"
+    "OpenSSL",
+    "Unicode-3.0"
 ]
 
 #
