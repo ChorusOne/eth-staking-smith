@@ -16,10 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Update local toolchain
-        run: |
-          rustup update
-          rustup install nightly          
+      - name: Install latest stable
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
 
       - name: Toolchain info
         run: |
@@ -45,4 +47,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: EmbarkStudios/cargo-deny-action@v1
+
+    - name: Install latest stable
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+          override: true
+
+    - name: Install cargo-deny
+      run: |
+        cargo install cargo-deny
+
+    - name: Run cargo deny check
+      run: |
+        cargo deny check

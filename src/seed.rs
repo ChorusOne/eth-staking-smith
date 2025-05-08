@@ -1,11 +1,11 @@
 use bip39::{Language, Mnemonic, MnemonicType, Seed as Bip39Seed};
 
 /// This creates new seed using platform dependent getrandom(2) system call.
-
+///
 /// On Linux, getrandom(2) pulls entropy from cryptographically secure RNG
 /// provided by Linux kernel, which implements ChaCha based PRNG algorithm that
 /// reseeds itself from multiple hardware TRNG sources with 300Hz frequency.
-
+///
 /// For non-Linux platforms, look up target platform implementation in
 /// https://github.com/rust-random/getrandom for details.
 fn create_new_seed() -> Mnemonic {
