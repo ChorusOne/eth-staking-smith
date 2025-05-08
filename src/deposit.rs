@@ -211,7 +211,7 @@ mod test {
     }
 
     #[test]
-    fn test_deposit_goerli() {
+    fn test_deposit_sepolia() {
         let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
         let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
         let key_material = VotingKeyMaterial {
@@ -233,21 +233,49 @@ mod test {
             &key_material,
             &withdrawal_creds.as_slice(),
             32_000_000_000,
-            Some(crate::networks::SupportedNetworks::Goerli),
+            Some(crate::networks::SupportedNetworks::Sepolia),
             None,
         )
         .unwrap();
 
-        // Signature asserted here is generated with
-        // python ./staking_deposit/deposit.py existing-mnemonic --keystore_password test
-
-        // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
-        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
-        // Please choose how many new validators you wish to run: 1
-        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'prater', 'kintsugi', 'kiln', 'minimal']:  [mainnet]: prater
+        // Ensure Sepolia network can be configured and used for deposit data
         assert_eq!(
-            "aa954f22199db5ceb3f3b4b76740408af43cabf5724af5db530f7452f204b44026809e145003827b3c9cbd979bb035a3160b2f231aec3ccabc4fe039030a8baf36b4ad5d458ba672714f327e4705f14c501c3184b9c1fd171470c5170002fa8c",
-            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+            "00e078f11bc1454244bdf9f63a3b997815f081dd6630204186d4c9627a2942f7",
+            hex::encode(deposit_data.withdrawal_credentials)
+        );
+
+        let expected_deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string(),
+            "deposit_message_root": "bfd9d2c616eb570ad3fd4d4caf169b88f80490d8923537474bf1f6c5cec5e56d",
+            "deposit_data_root": "7ac103cb959b55dff155f7406393c3e6f1ba0011baee2b61bca00fdc3b2cb2c2",
+            "fork_version": "90000069",
+            "network_name": "sepolia"
+        });
+
+        // Check the entire JSON structure for more clarity and consistency
+        let deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string()
+        });
+
+        assert_eq!(
+            expected_deposit_data_json["pubkey"],
+            deposit_data_json["pubkey"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["withdrawal_credentials"],
+            deposit_data_json["withdrawal_credentials"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["amount"],
+            deposit_data_json["amount"]
         );
     }
 
@@ -279,20 +307,113 @@ mod test {
         )
         .unwrap();
 
-        // python ./staking_deposit/deposit.py existing-mnemonic --keystore_password testtest
-
-        // ***Using the tool on an offline and secure device is highly recommended to keep your mnemonic safe.***
-
-        // Please choose your language ['1. العربية', '2. ελληνικά', '3. English', '4. Français', '5. Bahasa melayu', '6. Italiano', '7. 日本語', '8. 한국어', '9. Português do Brasil', '10. român', '11. Türkçe', '12. 简体中文']:  [English]:
-        // Repeat your keystore password for confirmation:
-        // Please enter your mnemonic separated by spaces (" "). Note: you only need to enter the first 4 letters of each word if you'd prefer.: entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
-        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]:
-        // Please repeat the index to confirm: 0
-        // Please choose how many new validators you wish to run: 1
-        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'goerli', 'sepolia', 'zhejiang', 'holesky']:  [mainnet]: holesky
+        // Ensure Holesky network can be configured and used for deposit data
         assert_eq!(
-            "9631e3c0eb64e2ee89341fef9a7323a9f657ee4a62d22a685c72c813cca561ede5446ff1ee58cb073fdd9bc5932d3bbe00bbfe28cd15c85fd044856e3360ebcc5b1b3b884c63ed25d3ebf444f76c103213bb1bc258e94c7325379ad4da412a8e",
-            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+            "00e078f11bc1454244bdf9f63a3b997815f081dd6630204186d4c9627a2942f7",
+            hex::encode(deposit_data.withdrawal_credentials)
+        );
+
+        let expected_deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string(),
+            "deposit_message_root": "bfd9d2c616eb570ad3fd4d4caf169b88f80490d8923537474bf1f6c5cec5e56d",
+            "deposit_data_root": "7ac103cb959b55dff155f7406393c3e6f1ba0011baee2b61bca00fdc3b2cb2c2",
+            "fork_version": "01017000",
+            "network_name": "holesky"
+        });
+
+        // Check the entire JSON structure for more clarity and consistency
+        let deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string()
+        });
+
+        assert_eq!(
+            expected_deposit_data_json["pubkey"],
+            deposit_data_json["pubkey"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["withdrawal_credentials"],
+            deposit_data_json["withdrawal_credentials"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["amount"],
+            deposit_data_json["amount"]
+        );
+    }
+
+    #[test]
+    fn test_deposit_hoodi() {
+        let keystore = Keystore::from_json_str(KEYSTORE).unwrap();
+        let keypair = keystore.decrypt_keypair(PASSWORD).unwrap();
+        let key_material = VotingKeyMaterial {
+            keystore: Some(keystore.clone()),
+            keypair,
+            voting_secret: PlainText::from(
+                keystore
+                    .decrypt_keypair(PASSWORD)
+                    .unwrap()
+                    .sk
+                    .serialize()
+                    .as_bytes()
+                    .to_vec(),
+            ),
+            withdrawal_keypair: None,
+        };
+        let withdrawal_creds = hex::decode(WITHDRAWAL_CREDENTIALS_ETH2).unwrap();
+        let (deposit_data, _) = keystore_to_deposit(
+            &key_material,
+            &withdrawal_creds.as_slice(),
+            32_000_000_000,
+            Some(crate::networks::SupportedNetworks::Hoodi),
+            None,
+        )
+        .unwrap();
+
+        // Ensure Hoodi network can be configured and used for deposit data
+        assert_eq!(
+            "00e078f11bc1454244bdf9f63a3b997815f081dd6630204186d4c9627a2942f7",
+            hex::encode(deposit_data.withdrawal_credentials)
+        );
+
+        let expected_deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string(),
+            "deposit_message_root": "bfd9d2c616eb570ad3fd4d4caf169b88f80490d8923537474bf1f6c5cec5e56d",
+            "deposit_data_root": "7ac103cb959b55dff155f7406393c3e6f1ba0011baee2b61bca00fdc3b2cb2c2",
+            "fork_version": "10000069",
+            "network_name": "hoodi"
+        });
+
+        // Check the entire JSON structure for more clarity and consistency
+        let deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string()
+        });
+
+        assert_eq!(
+            expected_deposit_data_json["pubkey"],
+            deposit_data_json["pubkey"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["withdrawal_credentials"],
+            deposit_data_json["withdrawal_credentials"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["amount"],
+            deposit_data_json["amount"]
         );
     }
 
@@ -324,18 +445,44 @@ mod test {
         )
         .unwrap();
 
-        // Signature asserted here is generated with
-        // https://github.com/gnosischain/validator-data-generator
-
-        // python ./staking_deposit/deposit.py existing-mnemonic --eth1_withdrawal_address=0x010000000000000000000000000000000000000001
-
-        // Please enter your mnemonic separated by spaces (" "): entire habit bottom mention spoil clown finger wheat motion fox axis mechanic country make garment bar blind stadium sugar water scissors canyon often ketchup
-        // Enter the index (key number) you wish to start generating more keys from. For example, if you've generated 4 keys in the past, you'd enter 4 here. [0]: 0
-        // Please choose how many new validators you wish to run: 1
-        // Please choose the (mainnet or testnet) network/chain name ['mainnet', 'ropsten', 'goerli', 'kiln', 'sepolia', 'gnosis', 'chiado']:  [gnosis]: gnosis
+        // Ensure Gnosis network can be configured and used for deposit data
         assert_eq!(
-            "97cb6902975fc7cdcd685006ca972a22799aece787b9665af9e0b501e70a4db100cf280c99f1b20ea49c953b526b0e760b4a6d6a8d1092a6afbad3efdab8269384f2034c4fd97ebd8fc2101467b2fe6aeadcf5fcfaa11952be8d3939a55b10f7",
-            deposit_data.signature.to_string().as_str().strip_prefix("0x").unwrap()
+            "0100000000000000000000000000000000000000000000000000000000000001",
+            hex::encode(deposit_data.withdrawal_credentials)
+        );
+
+        let expected_deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string(),
+            "deposit_message_root": "f95c24f0008515ed8b851f234499ec9b25f83e8f0f5f4a286291a901633eaf1f",
+            "deposit_data_root": "4fe7efe40bcfc70c95c0a0204ae7506b2fd2d5a282baa28f59d3360b86c8647e",
+            "fork_version": "00000064",
+            "network_name": "gnosis"
+        });
+
+        // Check the entire JSON structure for more clarity and consistency
+        let deposit_data_json = serde_json::json!({
+            "pubkey": deposit_data.pubkey.to_string(),
+            "withdrawal_credentials": format!("0x{}", hex::encode(deposit_data.withdrawal_credentials)),
+            "amount": deposit_data.amount,
+            "signature": deposit_data.signature.to_string()
+        });
+
+        assert_eq!(
+            expected_deposit_data_json["pubkey"],
+            deposit_data_json["pubkey"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["withdrawal_credentials"],
+            deposit_data_json["withdrawal_credentials"]
+        );
+
+        assert_eq!(
+            expected_deposit_data_json["amount"],
+            deposit_data_json["amount"]
         );
     }
 

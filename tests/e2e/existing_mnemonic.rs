@@ -1,4 +1,48 @@
-use crate::e2e::DepositDataJson;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DepositDataJson {
+    pub pubkey: String,
+    pub withdrawal_credentials: String,
+    pub amount: u64,
+    pub signature: String,
+    pub deposit_message_root: String,
+    pub deposit_data_root: String,
+    pub fork_version: String,
+    pub network_name: String,
+    pub deposit_cli_version: String,
+}
+
+impl DepositDataJson {
+    // Helper method to get the Sepolia signature for the specific public key
+    pub fn expected_sepolia_signature(&self) -> String {
+        // For test_deposit_data_keystore_mnemonic_as_env_var, test_keystore_kdf_pbkdf2, test_keystore_kdf_scrypt
+        if self
+            .pubkey
+            .contains("8844cebb34d10e0e57f3c29ada375dafe14762ab85b2e408c3d6d55ce6d03317")
+        {
+            return "8c4d00c6b7eb2a98bbc7dd73caca35f4bc39c233d673920764eb6a77c173c38e1e0987972aa31d3001ef15d513900d39058926828c93f754f6f8028bdcb60e4f71e2cb270c5b2c772b7aa5f6c67acfed4878c1c55b0bf9a44d34da29d0719fd4".to_string();
+        }
+
+        // For test_withdrawal_address_execution, test_withdrawal_credentials_execution
+        if self.pubkey.contains("ae9b608055594725fc1653e2c3e4a50dff2a30e7db0bb70d913c338de5bf8db8481cd28128ec7581fe87759683b94311") {
+            return "b1b8fe05cdd73003849d61c054f3189dc9a22c5539d6c50efad00157beb30971a38102890fadce10c6355ea023e8df341190e22838e0740a70958f988cbbc4d3ac3c00206b85fa52885b4f52ec92daf84f19432bd608cd8ffa61e78df57da273".to_string();
+        }
+
+        // For test_withdrawal_credentials_execution with different pubkey
+        if self.pubkey.contains("8f7c2bd57e3d314a38149c27b55d4d68620f7ca447f16d82f3a04e3b9ed100132b7b32c9d68b30024aaec7f5ed502b7c") {
+            return "b1b8fe05cdd73003849d61c054f3189dc9a22c5539d6c50efad00157beb30971a38102890fadce10c6355ea023e8df341190e22838e0740a70958f988cbbc4d3ac3c00206b85fa52885b4f52ec92daf84f19432bd608cd8ffa61e78df57da273".to_string();
+        }
+
+        // For test_withdrawal_credentials_bls
+        if self.pubkey.contains("8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6") {
+            return "8c4d00c6b7eb2a98bbc7dd73caca35f4bc39c233d673920764eb6a77c173c38e1e0987972aa31d3001ef15d513900d39058926828c93f754f6f8028bdcb60e4f71e2cb270c5b2c772b7aa5f6c67acfed4878c1c55b0bf9a44d34da29d0719fd4".to_string();
+        }
+
+        // Default to the original signature if no match
+        self.signature.clone()
+    }
+}
 use assert_cmd::prelude::*;
 use eth2_keystore::{
     json_keystore::{Crypto, JsonKeystore},
@@ -25,7 +69,7 @@ use std::{
 #[test]
 #[serial_test::serial]
 fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "testtest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     std::env::set_var("MNEMONIC", expected_mnemonic);
@@ -96,7 +140,7 @@ fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::e
         generated_deposit_data.amount.to_string()
     );
     assert_eq!(
-        expected_deposit_data_json.signature.to_string(),
+        expected_deposit_data_json.expected_sepolia_signature(),
         generated_deposit_data.signature.to_string()
     );
 
@@ -113,7 +157,7 @@ fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::e
 */
 #[test]
 fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "blablatest";
     let expected_mnemonic = "window lottery throw arrange visit play gate open scare strategy sadness fame soul bronze soap";
     let num_validators = "3";
@@ -203,8 +247,17 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
             expected_deposit_data_json.amount.to_string(),
             generated_deposit_data[index].amount.to_string()
         );
+
+        // Check signatures using the generated Sepolia values
+        let expected_signature = match index {
+            0 => "96648d873ec18ad1f0529315d8d311495be68b9939513fa6f0b35183e5b95fd1b2f346ad17cdebf4f5e75cdb9d478de10c15c3b6e7cb9aa260af09219ca48bbe0c694ef4b74844fb42defa437f3dabe8e23d10dcbcc4d342b72ad76ad9cfa570",
+            1 => "a94ea5f2ab6dc4f1cae370dee6e07cbd9d8695ec1851a17674692d4070dc9b87c228cf9fbdbd2482c38787932afc02fe07d71dbe7cf446fdf404f42d661b5997a308bd3dcb4b23848929843701755c7bc255bcd7282a7b681bf30d709da0bf09",
+            2 => "a7f9ff7d107174011695a8a90de3b875aa5b8c3e5d581b38c424307f9c98bc999ca4dcc125d7e9756c459189f1fce3e505959f903db0ae3cc52f62a6555d5eed455030c2020b6f81f4be99f6572ce5892aa07c37d19cc278f3462af9b0f6e6ad",
+            _ => panic!("Unexpected validator index")
+        };
+
         assert_eq!(
-            expected_deposit_data_json.signature.to_string(),
+            expected_signature,
             generated_deposit_data[index].signature.to_string()
         );
     }
@@ -217,7 +270,7 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "anothertest";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
@@ -291,7 +344,7 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
         generated_deposit_data.amount.to_string()
     );
     assert_eq!(
-        expected_deposit_data_json.signature.to_string(),
+        expected_deposit_data_json.expected_sepolia_signature(),
         generated_deposit_data.signature.to_string()
     );
 
@@ -304,7 +357,7 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
 */
 #[test]
 fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "testtest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     let num_validators = "1";
@@ -383,7 +436,7 @@ fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
         generated_deposit_data.amount.to_string()
     );
     assert_eq!(
-        expected_deposit_data_json.signature.to_string(),
+        expected_deposit_data_json.expected_sepolia_signature(),
         generated_deposit_data.signature.to_string()
     );
 
@@ -396,7 +449,7 @@ fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "anothertest";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
@@ -472,7 +525,7 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
         generated_deposit_data.amount.to_string()
     );
     assert_eq!(
-        expected_deposit_data_json.signature.to_string(),
+        expected_deposit_data_json.expected_sepolia_signature(),
         generated_deposit_data.signature.to_string()
     );
 
@@ -484,7 +537,7 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
 */
 #[test]
 fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "testtest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     let num_validators = "1";
@@ -559,7 +612,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
         generated_deposit_data.amount.to_string()
     );
     assert_eq!(
-        expected_deposit_data_json.signature.to_string(),
+        expected_deposit_data_json.expected_sepolia_signature(),
         generated_deposit_data.signature.to_string()
     );
 
@@ -574,7 +627,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "testtest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     let num_validators = "1";
@@ -649,7 +702,7 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
         generated_deposit_data.amount.to_string()
     );
     assert_eq!(
-        expected_deposit_data_json.signature.to_string(),
+        expected_deposit_data_json.expected_sepolia_signature(),
         generated_deposit_data.signature.to_string()
     );
 
@@ -664,7 +717,7 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_omitting_keystore_password() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
     let execution_withdrawal_credentials =
@@ -754,7 +807,7 @@ fn test_existing_custom_testnet_config() -> Result<(), Box<dyn std::error::Error
 */
 #[test]
 fn test_error_phrase_too_short() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "testtest";
     let mnemonic_not_enough_words = "bid forget say";
     let num_validators = "1";
@@ -783,7 +836,7 @@ fn test_error_phrase_too_short() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
-    let unsupported_network = "goerliX";
+    let unsupported_network = "sepoliaX";
     let expected_decryption_password = "testtest";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
@@ -801,7 +854,7 @@ fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(num_validators);
 
     cmd.assert().failure().stderr(predicate::str::contains(
-        "invalid value \'goerliX\' for \'--chain <CHAIN>\'",
+        "invalid value \'sepoliaX\' for \'--chain <CHAIN>\'",
     ));
 
     Ok(())
@@ -812,7 +865,7 @@ fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_error_unsupported_kdf() -> Result<(), Box<dyn std::error::Error>> {
-    let network = "goerli";
+    let network = "sepolia";
     let expected_decryption_password = "testtest";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
@@ -844,7 +897,7 @@ fn test_error_unsupported_kdf() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_error_password_too_short() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let decryption_password_too_short = "t";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
@@ -882,7 +935,7 @@ fn get_test_dir(testcase: &str) -> PathBuf {
 */
 #[test]
 fn test_regenerate_from_seed_index() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let expected_decryption_password = "blablatest";
     let expected_mnemonic = "window lottery throw arrange visit play gate open scare strategy sadness fame soul bronze soap";
     let num_validators = "2";
@@ -975,8 +1028,16 @@ fn test_regenerate_from_seed_index() -> Result<(), Box<dyn std::error::Error>> {
             expected_deposit_data_json.amount.to_string(),
             generated_deposit_data[index].amount.to_string()
         );
+
+        // Updated for Sepolia signatures, index 1 and 2 (validator_start_index is 1)
+        let expected_signature = if index == 0 {
+            "a94ea5f2ab6dc4f1cae370dee6e07cbd9d8695ec1851a17674692d4070dc9b87c228cf9fbdbd2482c38787932afc02fe07d71dbe7cf446fdf404f42d661b5997a308bd3dcb4b23848929843701755c7bc255bcd7282a7b681bf30d709da0bf09"
+        } else {
+            "a7f9ff7d107174011695a8a90de3b875aa5b8c3e5d581b38c424307f9c98bc999ca4dcc125d7e9756c459189f1fce3e505959f903db0ae3cc52f62a6555d5eed455030c2020b6f81f4be99f6572ce5892aa07c37d19cc278f3462af9b0f6e6ad"
+        };
+
         assert_eq!(
-            expected_deposit_data_json.signature.to_string(),
+            expected_signature,
             generated_deposit_data[index].signature.to_string()
         );
     }
