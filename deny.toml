@@ -6,6 +6,12 @@ ignore = [
     "RUSTSEC-2024-0436",
 ]
 
+[sources]
+unknown-git = "deny"
+allow-git = [
+    "ssh://github.com/ChorusOne/lighthouse",
+]
+
 [licenses]
 # List of explicitly allowed licenses
 # [possible values: any SPDX 3.11 short identifier (+ optional exception)].

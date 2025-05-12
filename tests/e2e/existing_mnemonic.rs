@@ -825,7 +825,7 @@ fn test_error_phrase_too_short() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(num_validators);
 
     cmd.assert().failure().stderr(predicate::str::contains(
-        "Invalid phrase passed: invalid number of words in phrase: 3",
+        "Invalid phrase passed: InvalidWordLength(3)",
     ));
 
     Ok(())

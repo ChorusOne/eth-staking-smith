@@ -5,7 +5,7 @@ use types::PublicKeyBytes;
 
 pub(crate) fn pbkdf2() -> Kdf {
     let mut salt = vec![0u8; SALT_SIZE];
-    getrandom::getrandom(&mut salt).expect("Failed to generate pbkdf salt using getrandom(2)");
+    getrandom::fill(&mut salt).expect("Failed to generate pbkdf salt using getrandom(2)");
     Kdf::Pbkdf2(Pbkdf2 {
         dklen: DKLEN,
         c: 262_144,
@@ -16,7 +16,7 @@ pub(crate) fn pbkdf2() -> Kdf {
 
 pub(crate) fn scrypt() -> Kdf {
     let mut salt = vec![0u8; SALT_SIZE];
-    getrandom::getrandom(&mut salt).expect("Failed to generate scrypt salt using getrandom(2)");
+    getrandom::fill(&mut salt).expect("Failed to generate scrypt salt using getrandom(2)");
     Kdf::Scrypt(Scrypt {
         dklen: DKLEN,
         n: 262144,

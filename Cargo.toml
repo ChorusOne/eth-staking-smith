@@ -5,6 +5,7 @@ edition = "2021"
 description = "Deposit CLI replacement library"
 authors = ["tech@chorus.one"]
 publish = false
+resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,30 +14,34 @@ name = "eth_staking_smith"
 path = "src/lib.rs"
 
 [dependencies]
-clap = { version = "^4.5", features = ["derive", "env"] }
-ethereum_hashing = "0.6.0"
+# Lighthouse git dependencies.
 eth2_key_derivation = { git = "https://github.com/ChorusOne/lighthouse", rev = "664a8fae9650ecba457fccbb561c5c0d6c270e3b"}
 eth2_keystore = { git = "https://github.com/ChorusOne/lighthouse", rev = "664a8fae9650ecba457fccbb561c5c0d6c270e3b"}
 eth2_network_config = { git = "https://github.com/ChorusOne/lighthouse", rev = "664a8fae9650ecba457fccbb561c5c0d6c270e3b" }
-ethereum_ssz = "0.5.4"
-ethereum_ssz_derive = "0.5.4"
 eth2_wallet = { git = "https://github.com/ChorusOne/lighthouse", rev = "664a8fae9650ecba457fccbb561c5c0d6c270e3b"}
+types = { git = "https://github.com/ChorusOne/lighthouse", rev = "664a8fae9650ecba457fccbb561c5c0d6c270e3b"}
+
+# These must be pinned to a version that lighthouse version used above uses.
+ethereum_hashing = "0.7.0"
+ethereum_ssz = "0.7"
+ethereum_ssz_derive = "0.7"
+tree_hash = "0.8"
+tree_hash_derive = "0.8"
+
+clap = { version = "^4.5", features = ["derive", "env"] }
 env_logger = "^0.11"
 hex = "0.4"
 lazy_static = "1.5"
 log = "^0.4"
+
 # eth2_network_config uses native-tls, so do we
-reqwest = { version = "0.11", default-features = false, features = ["native-tls"] }
-getrandom = "0.2"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "native-tls"] }
+getrandom = "0.3"
 regex = "1.10.6"
 serde = "1.0.204"
 serde_derive = "1.0"
 serde_json = "1.0"
-tiny-bip39 = "1.0.0"
-# This must be pinned to a version that lighthouse uses
-tree_hash = "0.8"
-tree_hash_derive = "0.8"
-types = { git = "https://github.com/ChorusOne/lighthouse", rev = "664a8fae9650ecba457fccbb561c5c0d6c270e3b"}
+tiny-bip39 = "2.0.0"
 url = "2.5"
 uuid = { version = "1.10", features = ["v4"] }
 
