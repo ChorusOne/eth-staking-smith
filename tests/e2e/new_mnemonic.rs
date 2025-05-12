@@ -11,7 +11,7 @@ use std::{path::PathBuf, process::Command};
 */
 #[test]
 fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = SupportedNetworks::Goerli;
+    let chain = SupportedNetworks::Sepolia;
     let decryption_password = "testtest";
     let num_validators = "1";
 
@@ -70,7 +70,7 @@ fn test_deposit_data_keystore() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let decryption_password = "testtest";
     let num_validators = "3";
     let execution_withdrawal_credentials = "0x0000000000000000000000000000000000000001";
@@ -104,7 +104,7 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
     let generated_deposit_datas = generated_validator_json.deposit_data;
 
     let spec =
-        eth_staking_smith::chain_spec::chain_spec_for_network(&SupportedNetworks::Goerli).unwrap();
+        eth_staking_smith::chain_spec::chain_spec_for_network(&SupportedNetworks::Sepolia).unwrap();
 
     for deposit_data in generated_deposit_datas {
         deposit_data.validate(spec.clone());
@@ -135,7 +135,7 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = SupportedNetworks::Goerli;
+    let chain = SupportedNetworks::Sepolia;
     let decryption_password = "testtest";
     let num_validators = "1";
     let execution_withdrawal_credentials = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
@@ -193,7 +193,7 @@ fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>>
 */
 #[test]
 fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = SupportedNetworks::Goerli;
+    let chain = SupportedNetworks::Sepolia;
     let decryption_password = "testtest";
     let num_validators = "3";
     let bls_withdrawal_credentials =
@@ -313,7 +313,7 @@ fn test_new_custom_testnet_config() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = SupportedNetworks::Goerli;
+    let chain = SupportedNetworks::Sepolia;
     let decryption_password = "testtest";
     let num_validators = "3";
     let execution_withdrawal_credentials =
@@ -372,7 +372,7 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
 */
 #[test]
 fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = SupportedNetworks::Goerli;
+    let chain = SupportedNetworks::Sepolia;
     let decryption_password = "testtest";
     let num_validators = "1";
     let kdf = "pbkdf2";
@@ -434,7 +434,7 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = SupportedNetworks::Goerli;
+    let chain = SupportedNetworks::Sepolia;
     let decryption_password = "testtest";
     let num_validators = "1";
     let kdf = "scrypt";
@@ -496,7 +496,7 @@ fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_omitting_keystore_password() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let num_validators = "1";
     let execution_withdrawal_credentials =
         "0x01000000000000000000000071c7656ec7ab88b098defb751b7401b5f6d8976f";
@@ -532,7 +532,7 @@ fn test_omitting_keystore_password() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
-    let unsupported_network = "goerliX";
+    let unsupported_network = "sepoliaX";
     let expected_decryption_password = "testtest";
     let num_validators = "1";
 
@@ -547,7 +547,7 @@ fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg(num_validators);
 
     cmd.assert().failure().stderr(predicate::str::contains(
-        "invalid value \'goerliX\' for \'--chain <CHAIN>\'",
+        "invalid value \'sepoliaX\' for \'--chain <CHAIN>\'",
     ));
 
     Ok(())
@@ -558,7 +558,7 @@ fn test_error_unsupported_network() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_error_unsupported_kdf() -> Result<(), Box<dyn std::error::Error>> {
-    let network = "goerli";
+    let network = "sepolia";
     let expected_decryption_password = "testtest";
     let num_validators = "1";
     let unsupported_kdf = "pbkdf3";
@@ -587,7 +587,7 @@ fn test_error_unsupported_kdf() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_error_password_too_short() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "goerli";
+    let chain = "sepolia";
     let decryption_password_too_short = "t";
     let num_validators = "1";
 

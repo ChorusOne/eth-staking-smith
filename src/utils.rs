@@ -1,8 +1,7 @@
 use eth2_keystore::json_keystore::{HexBytes, Kdf, Pbkdf2, Prf, Scrypt};
 use eth2_keystore::{DKLEN, SALT_SIZE};
 use regex::Regex;
-use ssz::Encode;
-use types::{Hash256, PublicKeyBytes};
+use types::PublicKeyBytes;
 
 pub(crate) fn pbkdf2() -> Kdf {
     let mut salt = vec![0u8; SALT_SIZE];
@@ -31,7 +30,7 @@ pub(crate) fn scrypt() -> Kdf {
 ///
 /// Used for submitting deposits to the Eth1 deposit contract.
 pub(crate) fn get_withdrawal_credentials(pubkey: &PublicKeyBytes, prefix_byte: u8) -> Vec<u8> {
-    let hashed = ethereum_hashing::hash(&pubkey.as_ssz_bytes());
+    let hashed = ethereum_hashing::hash(pubkey.as_serialized());
     let mut prefixed = vec![prefix_byte];
     prefixed.extend_from_slice(&hashed[1..]);
 
@@ -43,8 +42,7 @@ pub(crate) fn get_withdrawal_credentials(pubkey: &PublicKeyBytes, prefix_byte: u
 /// Used for deriving withdrawal from the validator BLS key pair
 pub fn withdrawal_creds_from_pk(withdrawal_pk: &PublicKeyBytes) -> String {
     let withdrawal_creds = get_withdrawal_credentials(withdrawal_pk, 0);
-    let credentials_hash = Hash256::from_slice(&withdrawal_creds);
-    hex::encode(credentials_hash.as_bytes())
+    hex::encode(withdrawal_creds)
 }
 
 // Various regexes used for input validation
