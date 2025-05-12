@@ -34,8 +34,8 @@ serde_derive = "1.0"
 serde_json = "1.0"
 tiny-bip39 = "1.0.0"
 # This must be pinned to a version that lighthouse uses
-tree_hash = "0.5.2"
-tree_hash_derive = "0.5.2"
+tree_hash = "0.8"
+tree_hash_derive = "0.8"
 types = { git = "https://github.com/ChorusOne/lighthouse", rev = "664a8fae9650ecba457fccbb561c5c0d6c270e3b"}
 url = "2.5"
 uuid = { version = "1.10", features = ["v4"] }
