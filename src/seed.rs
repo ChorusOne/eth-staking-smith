@@ -11,7 +11,7 @@ use bip39::{Language, Mnemonic, MnemonicType, Seed as Bip39Seed};
 fn create_new_seed() -> Mnemonic {
     let mut bytes = vec![0u8; MnemonicType::Words24.entropy_bits() / 8];
 
-    getrandom::getrandom(&mut bytes).expect("Failed to generate seed using getrandom(2)");
+    getrandom::fill(&mut bytes).expect("Failed to generate seed using getrandom(2)");
 
     Mnemonic::from_entropy(bytes.as_slice(), Language::English)
         .expect("Failed to generate mnemonic")
