@@ -12,7 +12,6 @@ jobs:
       matrix:
         target:
           - { triple: x86_64-unknown-linux-gnu, suffix: linux_amd64, file: eth-staking-smith, runner: ubuntu-latest }
-          - { triple: x86_64-unknown-linux-gnu, suffix: linux_amd64_glibc2.31, file: eth-staking-smith, runner: ubuntu-20.04 }
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,12 +23,7 @@ jobs:
           override: true
 
       - name: Install Dependencies
-        run: sudo apt-get update && sudo apt-get install -y libssl-dev perl make gcc llvm-dev libclang-11-dev clang-11
-
-      - name: Set up llvm-config
-        run: |
-          sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-11 100
-
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev perl make gcc llvm-dev libclang-dev clang
 
       - name: Add rustup target
         run: rustup target add ${{ matrix.target.triple }}
