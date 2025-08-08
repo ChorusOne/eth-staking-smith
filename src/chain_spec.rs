@@ -69,8 +69,7 @@ pub fn validators_root_and_spec(
     chain: Option<SupportedNetworks>,
     testnet_properties: Option<(String, String)>,
 ) -> (Hash256, ChainSpec) {
-    if chain.is_some() {
-        let well_known_chain = chain.unwrap();
+    if let Some(well_known_chain) = chain {
         (
             crate::networks::validators_root_for(&well_known_chain),
             chain_spec_for_network(&well_known_chain).expect("Invalid chain spec"),
