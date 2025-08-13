@@ -13,36 +13,6 @@ pub struct DepositDataJson {
     pub deposit_cli_version: String,
 }
 
-impl DepositDataJson {
-    // Helper method to get the Sepolia signature for the specific public key
-    pub fn expected_sepolia_signature(&self) -> String {
-        // For test_deposit_data_keystore_mnemonic_as_env_var, test_keystore_kdf_pbkdf2, test_keystore_kdf_scrypt
-        if self
-            .pubkey
-            .contains("8844cebb34d10e0e57f3c29ada375dafe14762ab85b2e408c3d6d55ce6d03317")
-        {
-            return "8c4d00c6b7eb2a98bbc7dd73caca35f4bc39c233d673920764eb6a77c173c38e1e0987972aa31d3001ef15d513900d39058926828c93f754f6f8028bdcb60e4f71e2cb270c5b2c772b7aa5f6c67acfed4878c1c55b0bf9a44d34da29d0719fd4".to_string();
-        }
-
-        // For test_withdrawal_address_execution, test_withdrawal_credentials_execution
-        if self.pubkey.contains("ae9b608055594725fc1653e2c3e4a50dff2a30e7db0bb70d913c338de5bf8db8481cd28128ec7581fe87759683b94311") {
-            return "b1b8fe05cdd73003849d61c054f3189dc9a22c5539d6c50efad00157beb30971a38102890fadce10c6355ea023e8df341190e22838e0740a70958f988cbbc4d3ac3c00206b85fa52885b4f52ec92daf84f19432bd608cd8ffa61e78df57da273".to_string();
-        }
-
-        // For test_withdrawal_credentials_execution with different pubkey
-        if self.pubkey.contains("8f7c2bd57e3d314a38149c27b55d4d68620f7ca447f16d82f3a04e3b9ed100132b7b32c9d68b30024aaec7f5ed502b7c") {
-            return "b1b8fe05cdd73003849d61c054f3189dc9a22c5539d6c50efad00157beb30971a38102890fadce10c6355ea023e8df341190e22838e0740a70958f988cbbc4d3ac3c00206b85fa52885b4f52ec92daf84f19432bd608cd8ffa61e78df57da273".to_string();
-        }
-
-        // For test_withdrawal_credentials_bls
-        if self.pubkey.contains("8666389c3fe6ff0bca9adba81504f380b9e2c719419760d561836472fafe295cb50696524e19cba084e1d788d66c80d6") {
-            return "8c4d00c6b7eb2a98bbc7dd73caca35f4bc39c233d673920764eb6a77c173c38e1e0987972aa31d3001ef15d513900d39058926828c93f754f6f8028bdcb60e4f71e2cb270c5b2c772b7aa5f6c67acfed4878c1c55b0bf9a44d34da29d0719fd4".to_string();
-        }
-
-        // Default to the original signature if no match
-        self.signature.clone()
-    }
-}
 use assert_cmd::prelude::*;
 use eth2_keystore::{
     json_keystore::{Crypto, JsonKeystore},
@@ -54,7 +24,6 @@ use std::{
     env,
     path::{Path, PathBuf},
     process::Command,
-    str::FromStr,
 };
 
 /*
@@ -68,84 +37,107 @@ use std::{
 */
 #[test]
 #[serial_test::serial]
+
 fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "testtest";
+    let expected_decryption_password = "testtesttest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     std::env::set_var("MNEMONIC", expected_mnemonic);
     let num_validators = "1";
 
-    // test directory
-    let test_dir = get_test_dir("withdrawal_credentials_bls");
+    let test_configs = vec![
+        (
+            "sepolia",
+            "keystore-m_12381_3600_0_0_0-1755012899.json",
+            "deposit_data-1755012899.json",
+        ),
+        (
+            "hoodi",
+            "keystore-m_12381_3600_0_0_0-1755000050.json",
+            "deposit_data-1755000050.json",
+        ),
+    ];
 
-    // read expected files
-    let expected_keystore_json =
-        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1668613231.json");
-    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1668613231.json");
-    let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
+    for (chain, keystore_filename, deposit_data_filename) in test_configs.iter() {
+        // test directory for current chain
+        let test_dir = get_test_dir(&format!("withdrawal_credentials_bls/{}", chain));
 
-    // decrypt keystore with expected password to derive private key
-    let expected_private_key = decrypt_expected_keystore_file(
-        expected_decryption_password,
-        &expected_keystore_json.crypto,
-    );
+        // read expected files
+        let expected_keystore_json = read_keystore_json(&test_dir, keystore_filename);
+        let expected_deposit_data = read_deposit_data_json(&test_dir, deposit_data_filename);
+        let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
-    // run eth-staking-smith
+        // decrypt keystore with expected password to derive private key
+        let expected_private_key = decrypt_expected_keystore_file(
+            expected_decryption_password,
+            &expected_keystore_json.crypto,
+        );
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        // run eth-staking-smith
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
 
-    cmd.assert().success();
+        cmd.assert().success();
 
-    // read generated output
+        // read generated output
+        let output = &cmd.output()?.stdout;
+        let command_output = std::str::from_utf8(output)?;
+        let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
+        let generated_private_key = generated_validator_json
+            .private_keys
+            .get(0)
+            .expect("could not get generated private key");
+        let generated_deposit_data = generated_validator_json
+            .deposit_data
+            .get(0)
+            .expect("could not get generated deposit data key");
+        let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
-    let generated_private_key = generated_validator_json
-        .private_keys
-        .get(0)
-        .expect("could not get generated private key");
-    let generated_deposit_data = generated_validator_json
-        .deposit_data
-        .get(0)
-        .expect("could not get generated deposit data key");
-    let keystore = generated_validator_json.keystores.get(0).unwrap();
+        // compare private keys
+        assert_eq!(expected_private_key, generated_private_key.to_owned());
 
-    // compare private keys
+        // compare deposit data
+        assert_eq!(
+            expected_deposit_data_json.pubkey.to_string(),
+            generated_deposit_data.pubkey
+        );
+        assert_eq!(
+            expected_deposit_data_json
+                .withdrawal_credentials
+                .to_string(),
+            generated_deposit_data.withdrawal_credentials
+        );
+        assert_eq!(
+            expected_deposit_data_json.amount.to_string(),
+            generated_deposit_data.amount.to_string()
+        );
 
-    assert_eq!(expected_private_key, generated_private_key.to_owned());
+        // Handle chain-specific signature validation
+        match chain.as_ref() {
+            "sepolia" => {
+                assert_eq!(
+                    expected_deposit_data_json.signature,
+                    generated_deposit_data.signature.to_string()
+                );
+            }
+            "hoodi" => {
+                assert_eq!(
+                    expected_deposit_data_json.signature,
+                    generated_deposit_data.signature.to_string()
+                );
+            }
+            _ => panic!("Unknown chain: {}", chain),
+        }
 
-    // compare deposit data
-
-    assert_eq!(
-        expected_deposit_data_json.pubkey.to_string(),
-        generated_deposit_data.pubkey
-    );
-    assert_eq!(
-        expected_deposit_data_json
-            .withdrawal_credentials
-            .to_string(),
-        generated_deposit_data.withdrawal_credentials
-    );
-    assert_eq!(
-        expected_deposit_data_json.amount.to_string(),
-        generated_deposit_data.amount.to_string()
-    );
-    assert_eq!(
-        expected_deposit_data_json.expected_sepolia_signature(),
-        generated_deposit_data.signature.to_string()
-    );
-
-    // check that pbkdf2 was used if nothing else is specified
-    assert_eq!("pbkdf2", parse_kdf_function(keystore));
+        // check that pbkdf2 was used if nothing else is specified
+        assert_eq!("pbkdf2", parse_kdf_function(keystore));
+    }
 
     std::env::remove_var("MNEMONIC");
 
@@ -157,109 +149,106 @@ fn test_deposit_data_keystore_mnemonic_as_env_var() -> Result<(), Box<dyn std::e
 */
 #[test]
 fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "blablatest";
+    let expected_decryption_password = "blablatesttest";
     let expected_mnemonic = "window lottery throw arrange visit play gate open scare strategy sadness fame soul bronze soap";
     let num_validators = "3";
     let execution_withdrawal_credentials = "0x0000000000000000000000000000000000000001";
 
-    // test directory
-    let test_dir = get_test_dir("multiple_validators");
+    let test_configs = vec![
+        (
+            "sepolia",
+            vec![
+                "keystore-m_12381_3600_0_0_0-1755013393.json",
+                "keystore-m_12381_3600_1_0_0-1755013393.json",
+                "keystore-m_12381_3600_2_0_0-1755013393.json",
+            ],
+            "deposit_data-1755013393.json",
+        ),
+        (
+            "hoodi",
+            vec![
+                "keystore-m_12381_3600_0_0_0-1755071454.json",
+                "keystore-m_12381_3600_1_0_0-1755071454.json",
+                "keystore-m_12381_3600_2_0_0-1755071454.json",
+            ],
+            "deposit_data-1755071454.json",
+        ),
+    ];
 
-    // read expected files
-    let expected_deposit_data_json =
-        read_deposit_data_json(&test_dir, "deposit_data-1670231001.json");
+    for (chain, expected_keystore_files, deposit_data) in test_configs.iter() {
+        // test directory
+        let test_dir = get_test_dir(&format!("multiple_validators/{}", chain));
+        // read expected files
+        let expected_deposit_data_json = read_deposit_data_json(&test_dir, deposit_data);
 
-    let mut expected_keystore_jsons = vec![];
-    let mut index = 0;
-
-    for entry in std::fs::read_dir(&test_dir)? {
-        let filename = entry?
-            .file_name()
-            .to_str()
-            .expect("could not read filename")
-            .to_owned();
-        if filename.starts_with(&format!("keystore-m_12381_3600_{}", index)) {
-            let keystore_path = test_dir.join(PathBuf::from_str(&filename)?);
-            let keystore_file = std::fs::read_to_string(test_dir.join(keystore_path))?;
-            let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)?;
+        let mut expected_keystore_jsons = vec![];
+        for filename in expected_keystore_files.iter() {
+            let expected_keystore_json = read_keystore_json(&test_dir, filename);
             expected_keystore_jsons.push(expected_keystore_json);
-            index = index + 1;
         }
-    }
+        // run eth-staking-smith
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    // run eth-staking-smith
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--mnemonic");
+        cmd.arg(expected_mnemonic);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
+        cmd.arg("--withdrawal_credentials");
+        cmd.arg(execution_withdrawal_credentials);
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        cmd.assert().success();
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--withdrawal_credentials");
-    cmd.arg(execution_withdrawal_credentials);
+        // read generated output
+        let output = &cmd.output()?.stdout;
+        let command_output = std::str::from_utf8(output)?;
+        let generated_validator_json: ValidatorExports =
+            serde_json::from_str(command_output).expect("could not unmarshal command output");
+        let generated_private_keys = generated_validator_json.private_keys;
+        let generated_deposit_data = generated_validator_json.deposit_data;
 
-    cmd.assert().success();
+        // decrypt keystore with expected password to derive private key and compare private keys
+        for index in 0..expected_keystore_jsons.len() {
+            let expected_private_key_txt = eth2_keystore::decrypt(
+                expected_decryption_password.as_bytes(),
+                &expected_keystore_jsons[index].crypto,
+            )
+            .expect("could not decrypt keystore");
+            let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+            assert_eq!(
+                expected_private_key,
+                generated_private_keys[index].to_owned()
+            );
+        }
 
-    // read generated output
+        // compare deposit data entries
+        for index in 0..expected_deposit_data_json.len() {
+            let expected_deposit_data_json = &expected_deposit_data_json[index];
 
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports =
-        serde_json::from_str(command_output).expect("could not unmarshal command output");
-    let generated_private_keys = generated_validator_json.private_keys;
-    let generated_deposit_data = generated_validator_json.deposit_data;
+            assert_eq!(
+                expected_deposit_data_json.pubkey.to_string(),
+                generated_deposit_data[index].pubkey
+            );
+            assert_eq!(
+                expected_deposit_data_json
+                    .withdrawal_credentials
+                    .to_string(),
+                generated_deposit_data[index].withdrawal_credentials
+            );
+            assert_eq!(
+                expected_deposit_data_json.amount.to_string(),
+                generated_deposit_data[index].amount.to_string()
+            );
 
-    // decrypt keystore with expected password to derive private key and compare private keys
-    for index in 0..expected_keystore_jsons.len() {
-        let expected_private_key_txt = eth2_keystore::decrypt(
-            expected_decryption_password.as_bytes(),
-            &expected_keystore_jsons[index].crypto,
-        )
-        .expect("could not decrypt keystore");
-        let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
-        assert_eq!(
-            expected_private_key,
-            generated_private_keys[index].to_owned()
-        );
-    }
-
-    // compare deposit data entries
-    for index in 0..expected_deposit_data_json.len() {
-        let expected_deposit_data_json = &expected_deposit_data_json[index];
-
-        assert_eq!(
-            expected_deposit_data_json.pubkey.to_string(),
-            generated_deposit_data[index].pubkey
-        );
-        assert_eq!(
-            expected_deposit_data_json
-                .withdrawal_credentials
-                .to_string(),
-            generated_deposit_data[index].withdrawal_credentials
-        );
-        assert_eq!(
-            expected_deposit_data_json.amount.to_string(),
-            generated_deposit_data[index].amount.to_string()
-        );
-
-        // Check signatures using the generated Sepolia values
-        let expected_signature = match index {
-            0 => "96648d873ec18ad1f0529315d8d311495be68b9939513fa6f0b35183e5b95fd1b2f346ad17cdebf4f5e75cdb9d478de10c15c3b6e7cb9aa260af09219ca48bbe0c694ef4b74844fb42defa437f3dabe8e23d10dcbcc4d342b72ad76ad9cfa570",
-            1 => "a94ea5f2ab6dc4f1cae370dee6e07cbd9d8695ec1851a17674692d4070dc9b87c228cf9fbdbd2482c38787932afc02fe07d71dbe7cf446fdf404f42d661b5997a308bd3dcb4b23848929843701755c7bc255bcd7282a7b681bf30d709da0bf09",
-            2 => "a7f9ff7d107174011695a8a90de3b875aa5b8c3e5d581b38c424307f9c98bc999ca4dcc125d7e9756c459189f1fce3e505959f903db0ae3cc52f62a6555d5eed455030c2020b6f81f4be99f6572ce5892aa07c37d19cc278f3462af9b0f6e6ad",
-            _ => panic!("Unexpected validator index")
-        };
-
-        assert_eq!(
-            expected_signature,
-            generated_deposit_data[index].signature.to_string()
-        );
+            assert_eq!(
+                expected_deposit_data_json.signature.to_string(),
+                generated_deposit_data[index].signature.to_string()
+            );
+        }
     }
 
     Ok(())
@@ -270,175 +259,194 @@ fn test_multliple_validators() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_address_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "anothertest";
+    // let chain = "sepolia";
+    let expected_decryption_password = "anothertesttest";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
     let execution_withdrawal_credentials = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 
-    // test directory
-    let test_dir = get_test_dir("withdrawal_credentials_execution");
+    let test_configs = vec![
+        (
+            "sepolia",
+            "keystore-m_12381_3600_0_0_0-1755072599.json",
+            "deposit_data-1755072599.json",
+        ),
+        (
+            "hoodi",
+            "keystore-m_12381_3600_0_0_0-1755073089.json",
+            "deposit_data-1755073089.json",
+        ),
+    ];
 
-    // read expected files
-    let expected_keystore_json =
-        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1669709160.json");
-    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1669709160.json");
-    let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
+    for (chain, keystore, deposit) in test_configs.iter() {
+        // test directory for current chain
+        let test_dir = get_test_dir(&format!("withdrawal_credentials_execution/{}", chain));
+        // read expected files
+        let expected_keystore_json = read_keystore_json(&test_dir, &keystore);
+        let expected_deposit_data = read_deposit_data_json(&test_dir, &deposit);
+        let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
+        // decrypt keystore with expected password to derive private key
+        let expected_private_key = decrypt_expected_keystore_file(
+            expected_decryption_password,
+            &expected_keystore_json.crypto,
+        );
+        // run eth-staking-smith
 
-    // decrypt keystore with expected password to derive private key
-    let expected_private_key = decrypt_expected_keystore_file(
-        expected_decryption_password,
-        &expected_keystore_json.crypto,
-    );
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    // run eth-staking-smith
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--mnemonic");
+        cmd.arg(expected_mnemonic);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
+        cmd.arg("--withdrawal_credentials");
+        cmd.arg(execution_withdrawal_credentials);
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        cmd.assert().success();
+        // read generated output
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--withdrawal_credentials");
-    cmd.arg(execution_withdrawal_credentials);
+        let output = &cmd.output()?.stdout;
+        let command_output = std::str::from_utf8(output)?;
+        let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
+        let generated_private_key = generated_validator_json
+            .private_keys
+            .get(0)
+            .expect("could not get generated private key");
+        let generated_deposit_data = generated_validator_json
+            .deposit_data
+            .get(0)
+            .expect("could not get generated deposit data");
 
-    cmd.assert().success();
+        // compare private keys
 
-    // read generated output
+        assert_eq!(expected_private_key, generated_private_key.to_owned());
 
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
-    let generated_private_key = generated_validator_json
-        .private_keys
-        .get(0)
-        .expect("could not get generated private key");
-    let generated_deposit_data = generated_validator_json
-        .deposit_data
-        .get(0)
-        .expect("could not get generated deposit data");
+        // compare deposit data
 
-    // compare private keys
-
-    assert_eq!(expected_private_key, generated_private_key.to_owned());
-
-    // compare deposit data
-
-    assert_eq!(
-        expected_deposit_data_json.pubkey.to_string(),
-        generated_deposit_data.pubkey
-    );
-    assert_eq!(
-        expected_deposit_data_json
-            .withdrawal_credentials
-            .to_string(),
-        generated_deposit_data.withdrawal_credentials
-    );
-    assert_eq!(
-        expected_deposit_data_json.amount.to_string(),
-        generated_deposit_data.amount.to_string()
-    );
-    assert_eq!(
-        expected_deposit_data_json.expected_sepolia_signature(),
-        generated_deposit_data.signature.to_string()
-    );
+        assert_eq!(
+            expected_deposit_data_json.pubkey.to_string(),
+            generated_deposit_data.pubkey
+        );
+        assert_eq!(
+            expected_deposit_data_json
+                .withdrawal_credentials
+                .to_string(),
+            generated_deposit_data.withdrawal_credentials
+        );
+        assert_eq!(
+            expected_deposit_data_json.amount.to_string(),
+            generated_deposit_data.amount.to_string()
+        );
+        assert_eq!(
+            expected_deposit_data_json.signature,
+            generated_deposit_data.signature.to_string()
+        );
+    }
 
     Ok(())
 }
 
 /*
     generate 1 validator by passing in an existing bls credentials
-    (to ensure correctness, we'll use the validator from testcase 1)
+    (to ensure correctness, we'll use the validator from testcase 1.
+    No need to generate a new one as the withdrawal_credential is derived from the mnemonic)
 */
 #[test]
 fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "testtest";
+    let expected_decryption_password = "testtesttest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     let num_validators = "1";
     let bls_withdrawal_credentials =
         "0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d";
 
-    // test directory
-    let test_dir = get_test_dir("withdrawal_credentials_bls");
+    let test_config = vec![
+        (
+            "sepolia",
+            "keystore-m_12381_3600_0_0_0-1755012899.json",
+            "deposit_data-1755012899.json",
+        ),
+        (
+            "hoodi",
+            "keystore-m_12381_3600_0_0_0-1755000050.json",
+            "deposit_data-1755000050.json",
+        ),
+    ];
 
-    // read expected files
-    let expected_keystore_json =
-        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1668613231.json");
-    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1668613231.json");
-    let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
+    for (chain, keystore, deposit) in test_config.iter() {
+        // test directory
+        let test_dir = get_test_dir(&format!("withdrawal_credentials_bls/{}", chain));
+        // read expected files
+        let expected_keystore_json = read_keystore_json(&test_dir, &keystore);
+        let expected_deposit_data = read_deposit_data_json(&test_dir, &deposit);
+        let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
-    // decrypt keystore with expected password to derive private key
-    let expected_private_key = decrypt_expected_keystore_file(
-        expected_decryption_password,
-        &expected_keystore_json.crypto,
-    );
+        // decrypt keystore with expected password to derive private key
+        let expected_private_key = decrypt_expected_keystore_file(
+            expected_decryption_password,
+            &expected_keystore_json.crypto,
+        );
+        // run eth-staking-smith
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    // run eth-staking-smith
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--mnemonic");
+        cmd.arg(expected_mnemonic);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
+        cmd.arg("--withdrawal_credentials");
+        cmd.arg(bls_withdrawal_credentials);
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        cmd.assert().success();
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--withdrawal_credentials");
-    cmd.arg(bls_withdrawal_credentials);
+        // read generated output
+        let output = &cmd
+            .output()
+            .expect("could not get output from command")
+            .stdout;
+        let command_output =
+            std::str::from_utf8(output).expect("could not parse output into string");
+        let generated_validator_json: ValidatorExports =
+            serde_json::from_str(command_output).expect("could not unmarshal command output");
+        let generated_private_key = generated_validator_json
+            .private_keys
+            .get(0)
+            .expect("could not get generated private key");
+        let generated_deposit_data = generated_validator_json
+            .deposit_data
+            .get(0)
+            .expect("could not get generated deposit data");
 
-    cmd.assert().success();
+        // compare private keys
+        assert_eq!(expected_private_key, generated_private_key.to_owned());
 
-    // read generated output
-
-    let output = &cmd
-        .output()
-        .expect("could not get output from command")
-        .stdout;
-    let command_output = std::str::from_utf8(output).expect("could not parse output into string");
-    let generated_validator_json: ValidatorExports =
-        serde_json::from_str(command_output).expect("could not unmarshal command output");
-    let generated_private_key = generated_validator_json
-        .private_keys
-        .get(0)
-        .expect("could not get generated private key");
-    let generated_deposit_data = generated_validator_json
-        .deposit_data
-        .get(0)
-        .expect("could not get generated deposit data");
-
-    // compare private keys
-
-    assert_eq!(expected_private_key, generated_private_key.to_owned());
-
-    // compare deposit data
-
-    assert_eq!(
-        expected_deposit_data_json.pubkey.to_string(),
-        generated_deposit_data.pubkey
-    );
-    assert_eq!(
-        expected_deposit_data_json
-            .withdrawal_credentials
-            .to_string(),
-        generated_deposit_data.withdrawal_credentials
-    );
-    assert_eq!(
-        expected_deposit_data_json.amount.to_string(),
-        generated_deposit_data.amount.to_string()
-    );
-    assert_eq!(
-        expected_deposit_data_json.expected_sepolia_signature(),
-        generated_deposit_data.signature.to_string()
-    );
+        // compare deposit data
+        assert_eq!(
+            expected_deposit_data_json.pubkey.to_string(),
+            generated_deposit_data.pubkey
+        );
+        assert_eq!(
+            expected_deposit_data_json
+                .withdrawal_credentials
+                .to_string(),
+            generated_deposit_data.withdrawal_credentials
+        );
+        assert_eq!(
+            expected_deposit_data_json.amount.to_string(),
+            generated_deposit_data.amount.to_string()
+        );
+        assert_eq!(
+            expected_deposit_data_json.signature,
+            generated_deposit_data.signature.to_string()
+        );
+    }
 
     Ok(())
 }
@@ -449,85 +457,95 @@ fn test_withdrawal_credentials_bls() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "anothertest";
+    let expected_decryption_password = "anothertesttest";
     let expected_mnemonic = "satisfy suit expire castle fluid must electric genuine aim clock such under basic rabbit method";
     let num_validators = "1";
     let execution_withdrawal_credentials =
         "0x01000000000000000000000071c7656ec7ab88b098defb751b7401b5f6d8976f";
 
-    // test directory
-    let test_dir = get_test_dir("withdrawal_credentials_execution");
+    let test_configs = vec![
+        (
+            "sepolia",
+            "keystore-m_12381_3600_0_0_0-1755072599.json",
+            "deposit_data-1755072599.json",
+        ),
+        (
+            "hoodi",
+            "keystore-m_12381_3600_0_0_0-1755073089.json",
+            "deposit_data-1755073089.json",
+        ),
+    ];
 
-    // read expected files
-    let expected_keystore_json =
-        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1669709160.json");
-    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1669709160.json");
-    let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
+    for (chain, keystore, deposit) in test_configs.iter() {
+        // test directory for current chain
+        let test_dir = get_test_dir(&format!("withdrawal_credentials_execution/{}", chain));
+        // read expected files
+        let expected_keystore_json = read_keystore_json(&test_dir, &keystore);
+        let expected_deposit_data = read_deposit_data_json(&test_dir, &deposit);
+        let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
-    // decrypt keystore with expected password to derive private key
-    let expected_private_key = decrypt_expected_keystore_file(
-        expected_decryption_password,
-        &expected_keystore_json.crypto,
-    );
+        // decrypt keystore with expected password to derive private key
+        let expected_private_key = decrypt_expected_keystore_file(
+            expected_decryption_password,
+            &expected_keystore_json.crypto,
+        );
+        // run eth-staking-smith
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    // run eth-staking-smith
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--mnemonic");
+        cmd.arg(expected_mnemonic);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
+        cmd.arg("--withdrawal_credentials");
+        cmd.arg(execution_withdrawal_credentials);
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        cmd.assert().success();
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--withdrawal_credentials");
-    cmd.arg(execution_withdrawal_credentials);
+        // read generated output
 
-    cmd.assert().success();
+        let output = &cmd.output()?.stdout;
+        let command_output = std::str::from_utf8(output)?;
+        let generated_validator_json: ValidatorExports =
+            serde_json::from_str(command_output).expect("could not unmarshal command output");
+        let generated_private_key = generated_validator_json
+            .private_keys
+            .get(0)
+            .expect("could not get generated private key");
+        let generated_deposit_data = generated_validator_json
+            .deposit_data
+            .get(0)
+            .expect("could not get generated deposit data");
 
-    // read generated output
+        // compare private keys
 
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports =
-        serde_json::from_str(command_output).expect("could not unmarshal command output");
-    let generated_private_key = generated_validator_json
-        .private_keys
-        .get(0)
-        .expect("could not get generated private key");
-    let generated_deposit_data = generated_validator_json
-        .deposit_data
-        .get(0)
-        .expect("could not get generated deposit data");
+        assert_eq!(expected_private_key, generated_private_key.to_owned());
 
-    // compare private keys
+        // compare deposit data
 
-    assert_eq!(expected_private_key, generated_private_key.to_owned());
-
-    // compare deposit data
-
-    assert_eq!(
-        expected_deposit_data_json.pubkey.to_string(),
-        generated_deposit_data.pubkey
-    );
-    assert_eq!(
-        expected_deposit_data_json
-            .withdrawal_credentials
-            .to_string(),
-        generated_deposit_data.withdrawal_credentials
-    );
-    assert_eq!(
-        expected_deposit_data_json.amount.to_string(),
-        generated_deposit_data.amount.to_string()
-    );
-    assert_eq!(
-        expected_deposit_data_json.expected_sepolia_signature(),
-        generated_deposit_data.signature.to_string()
-    );
+        assert_eq!(
+            expected_deposit_data_json.pubkey.to_string(),
+            generated_deposit_data.pubkey
+        );
+        assert_eq!(
+            expected_deposit_data_json
+                .withdrawal_credentials
+                .to_string(),
+            generated_deposit_data.withdrawal_credentials
+        );
+        assert_eq!(
+            expected_deposit_data_json.amount.to_string(),
+            generated_deposit_data.amount.to_string()
+        );
+        assert_eq!(
+            expected_deposit_data_json.signature,
+            generated_deposit_data.signature.to_string()
+        );
+    }
 
     Ok(())
 }
@@ -537,87 +555,96 @@ fn test_withdrawal_credentials_execution() -> Result<(), Box<dyn std::error::Err
 */
 #[test]
 fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "testtest";
+    let expected_decryption_password = "testtesttest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     let num_validators = "1";
     let kdf = "pbkdf2";
 
-    // test directory
-    let test_dir = get_test_dir("withdrawal_credentials_bls");
+    let test_config = vec![
+        (
+            "sepolia",
+            "keystore-m_12381_3600_0_0_0-1755012899.json",
+            "deposit_data-1755012899.json",
+        ),
+        (
+            "hoodi",
+            "keystore-m_12381_3600_0_0_0-1755000050.json",
+            "deposit_data-1755000050.json",
+        ),
+    ];
 
-    // read expected files
-    let expected_keystore_json =
-        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1668613231.json");
-    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1668613231.json");
-    let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
+    for (chain, keystore, deposit) in test_config.iter() {
+        // test directory for current chain
+        let test_dir = get_test_dir(&format!("withdrawal_credentials_bls/{}", chain));
+        // read expected files
+        let expected_keystore_json = read_keystore_json(&test_dir, &keystore);
+        let expected_deposit_data = read_deposit_data_json(&test_dir, &deposit);
+        let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
-    // decrypt keystore with expected password to derive private key
-    let expected_private_key = decrypt_expected_keystore_file(
-        expected_decryption_password,
-        &expected_keystore_json.crypto,
-    );
+        // decrypt keystore with expected password to derive private key
+        let expected_private_key = decrypt_expected_keystore_file(
+            expected_decryption_password,
+            &expected_keystore_json.crypto,
+        );
 
-    // run eth-staking-smith
+        // run eth-staking-smith
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--kdf");
-    cmd.arg(kdf);
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--mnemonic");
+        cmd.arg(expected_mnemonic);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
+        cmd.arg("--kdf");
+        cmd.arg(kdf);
 
-    cmd.assert().success();
+        cmd.assert().success();
 
-    // read generated output
+        // read generated output
+        let output = &cmd.output()?.stdout;
+        let command_output = std::str::from_utf8(output)?;
+        let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
+        let generated_private_key = generated_validator_json
+            .private_keys
+            .get(0)
+            .expect("could not get generated private key");
+        let generated_deposit_data = generated_validator_json
+            .deposit_data
+            .get(0)
+            .expect("could not get generated deposit data key");
+        let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
-    let generated_private_key = generated_validator_json
-        .private_keys
-        .get(0)
-        .expect("could not get generated private key");
-    let generated_deposit_data = generated_validator_json
-        .deposit_data
-        .get(0)
-        .expect("could not get generated deposit data key");
-    let keystore = generated_validator_json.keystores.get(0).unwrap();
+        // compare private keys
+        assert_eq!(expected_private_key, generated_private_key.to_owned());
 
-    // compare private keys
+        // compare deposit data
+        assert_eq!(
+            expected_deposit_data_json.pubkey.to_string(),
+            generated_deposit_data.pubkey
+        );
+        assert_eq!(
+            expected_deposit_data_json
+                .withdrawal_credentials
+                .to_string(),
+            generated_deposit_data.withdrawal_credentials
+        );
+        assert_eq!(
+            expected_deposit_data_json.amount.to_string(),
+            generated_deposit_data.amount.to_string()
+        );
+        assert_eq!(
+            expected_deposit_data_json.signature,
+            generated_deposit_data.signature.to_string()
+        );
 
-    assert_eq!(expected_private_key, generated_private_key.to_owned());
-
-    // compare deposit data
-
-    assert_eq!(
-        expected_deposit_data_json.pubkey.to_string(),
-        generated_deposit_data.pubkey
-    );
-    assert_eq!(
-        expected_deposit_data_json
-            .withdrawal_credentials
-            .to_string(),
-        generated_deposit_data.withdrawal_credentials
-    );
-    assert_eq!(
-        expected_deposit_data_json.amount.to_string(),
-        generated_deposit_data.amount.to_string()
-    );
-    assert_eq!(
-        expected_deposit_data_json.expected_sepolia_signature(),
-        generated_deposit_data.signature.to_string()
-    );
-
-    // check that specified kdf was used
-    assert_eq!("pbkdf2", parse_kdf_function(keystore));
+        // check that specified kdf was used
+        assert_eq!("pbkdf2", parse_kdf_function(keystore));
+    }
 
     Ok(())
 }
@@ -627,88 +654,99 @@ fn test_keystore_kdf_pbkdf2() -> Result<(), Box<dyn std::error::Error>> {
 */
 #[test]
 fn test_keystore_kdf_scrypt() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "testtest";
+    let expected_decryption_password = "testtesttest";
     let expected_mnemonic = "ski interest capable knee usual ugly duty exercise tattoo subway delay upper bid forget say";
     let num_validators = "1";
     let kdf = "scrypt";
 
-    // test directory
-    let test_dir = get_test_dir("withdrawal_credentials_bls");
+    let test_config = vec![
+        (
+            "sepolia",
+            "keystore-m_12381_3600_0_0_0-1755012899.json",
+            "deposit_data-1755012899.json",
+        ),
+        (
+            "hoodi",
+            "keystore-m_12381_3600_0_0_0-1755000050.json",
+            "deposit_data-1755000050.json",
+        ),
+    ];
 
-    // read expected files
-    let expected_keystore_json =
-        read_keystore_json(&test_dir, "keystore-m_12381_3600_0_0_0-1668613231.json");
-    let expected_deposit_data = read_deposit_data_json(&test_dir, "deposit_data-1668613231.json");
-    let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
+    for (chain, keystore, deposit) in test_config.iter() {
+        // test directory for current chain
+        let test_dir = get_test_dir(&format!("withdrawal_credentials_bls/{}", chain));
+        // read expected files
+        let expected_keystore_json = read_keystore_json(&test_dir, &keystore);
+        let expected_deposit_data = read_deposit_data_json(&test_dir, &deposit);
+        let expected_deposit_data_json = expected_deposit_data.get(0).unwrap();
 
-    // decrypt keystore with expected password to derive private key
-    let expected_private_key = decrypt_expected_keystore_file(
-        expected_decryption_password,
-        &expected_keystore_json.crypto,
-    );
+        // decrypt keystore with expected password to derive private key
+        let expected_private_key = decrypt_expected_keystore_file(
+            expected_decryption_password,
+            &expected_keystore_json.crypto,
+        );
 
-    // run eth-staking-smith
+        // run eth-staking-smith
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--kdf");
-    cmd.arg(kdf);
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--mnemonic");
+        cmd.arg(expected_mnemonic);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
+        cmd.arg("--kdf");
+        cmd.arg(kdf);
 
-    cmd.assert().success();
+        cmd.assert().success();
 
-    // read generated output
+        // read generated output
 
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
-    let generated_private_key = generated_validator_json
-        .private_keys
-        .get(0)
-        .expect("could not get generated private key");
-    let generated_deposit_data = generated_validator_json
-        .deposit_data
-        .get(0)
-        .expect("could not get generated deposit data key");
-    let keystore = generated_validator_json.keystores.get(0).unwrap();
+        let output = &cmd.output()?.stdout;
+        let command_output = std::str::from_utf8(output)?;
+        let generated_validator_json: ValidatorExports = serde_json::from_str(command_output)?;
+        let generated_private_key = generated_validator_json
+            .private_keys
+            .get(0)
+            .expect("could not get generated private key");
+        let generated_deposit_data = generated_validator_json
+            .deposit_data
+            .get(0)
+            .expect("could not get generated deposit data key");
+        let keystore = generated_validator_json.keystores.get(0).unwrap();
 
-    // compare private keys
+        // compare private keys
 
-    assert_eq!(expected_private_key, generated_private_key.to_owned());
+        assert_eq!(expected_private_key, generated_private_key.to_owned());
 
-    // compare deposit data
+        // compare deposit data
 
-    assert_eq!(
-        expected_deposit_data_json.pubkey.to_string(),
-        generated_deposit_data.pubkey
-    );
-    assert_eq!(
-        expected_deposit_data_json
-            .withdrawal_credentials
-            .to_string(),
-        generated_deposit_data.withdrawal_credentials
-    );
-    assert_eq!(
-        expected_deposit_data_json.amount.to_string(),
-        generated_deposit_data.amount.to_string()
-    );
-    assert_eq!(
-        expected_deposit_data_json.expected_sepolia_signature(),
-        generated_deposit_data.signature.to_string()
-    );
+        assert_eq!(
+            expected_deposit_data_json.pubkey.to_string(),
+            generated_deposit_data.pubkey
+        );
+        assert_eq!(
+            expected_deposit_data_json
+                .withdrawal_credentials
+                .to_string(),
+            generated_deposit_data.withdrawal_credentials
+        );
+        assert_eq!(
+            expected_deposit_data_json.amount.to_string(),
+            generated_deposit_data.amount.to_string()
+        );
+        assert_eq!(
+            expected_deposit_data_json.signature,
+            generated_deposit_data.signature.to_string()
+        );
 
-    // check that correct kdf was used
-    assert_eq!("scrypt", parse_kdf_function(keystore));
-
+        // check that correct kdf was used
+        assert_eq!("scrypt", parse_kdf_function(keystore));
+    }
     Ok(())
 }
 
@@ -935,111 +973,108 @@ fn get_test_dir(testcase: &str) -> PathBuf {
 */
 #[test]
 fn test_regenerate_from_seed_index() -> Result<(), Box<dyn std::error::Error>> {
-    let chain = "sepolia";
-    let expected_decryption_password = "blablatest";
+    let expected_decryption_password = "blablatesttest";
     let expected_mnemonic = "window lottery throw arrange visit play gate open scare strategy sadness fame soul bronze soap";
     let num_validators = "2";
     let validator_start_index = "1";
     let execution_withdrawal_credentials = "0x0000000000000000000000000000000000000001";
 
-    // test directory
-    let test_dir = get_test_dir("regenerate_from_seed_index");
+    let test_config = vec![
+        (
+            "sepolia",
+            "deposit_data-1755078034.json",
+            vec![
+                "keystore-m_12381_3600_1_0_0-1755078034.json",
+                "keystore-m_12381_3600_2_0_0-1755078034.json",
+            ],
+        ),
+        (
+            "hoodi",
+            "deposit_data-1755078158.json",
+            vec![
+                "keystore-m_12381_3600_1_0_0-1755078158.json",
+                "keystore-m_12381_3600_2_0_0-1755078158.json",
+            ],
+        ),
+    ];
 
-    // read expected files
-    let expected_deposit_data_json =
-        read_deposit_data_json(&test_dir, "deposit_data-1670927040.json");
+    for (chain, deposit, keystores) in test_config.iter() {
+        // test directory for current chain
+        let test_dir = get_test_dir(&format!("regenerate_from_seed_index/{}", chain));
+        // read expected files
+        let expected_deposit_data_json = read_deposit_data_json(&test_dir, deposit);
 
-    let mut expected_keystore_jsons = vec![];
-    let mut index = 0;
-
-    for entry in std::fs::read_dir(&test_dir)? {
-        let filename = entry?
-            .file_name()
-            .to_str()
-            .expect("could not read filename")
-            .to_owned();
-        if filename.starts_with(&format!("keystore-m_12381_3600_{}", index)) {
-            let keystore_path = test_dir.join(PathBuf::from_str(&filename)?);
-            let keystore_file = std::fs::read_to_string(test_dir.join(keystore_path))?;
-            let expected_keystore_json = serde_json::from_str::<JsonKeystore>(&keystore_file)?;
+        let mut expected_keystore_jsons = vec![];
+        for filename in keystores.iter() {
+            let expected_keystore_json = read_keystore_json(&test_dir, filename);
             expected_keystore_jsons.push(expected_keystore_json);
-            index = index + 1;
         }
-    }
+        // run eth-staking-smith
 
-    // run eth-staking-smith
+        let mut cmd = Command::cargo_bin("eth-staking-smith")?;
 
-    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+        cmd.arg("existing-mnemonic");
+        cmd.arg("--chain");
+        cmd.arg(chain);
+        cmd.arg("--keystore_password");
+        cmd.arg(expected_decryption_password);
+        cmd.arg("--mnemonic");
+        cmd.arg(expected_mnemonic);
+        cmd.arg("--num_validators");
+        cmd.arg(num_validators);
+        cmd.arg("--validator_start_index");
+        cmd.arg(validator_start_index);
+        cmd.arg("--withdrawal_credentials");
+        cmd.arg(execution_withdrawal_credentials);
 
-    cmd.arg("existing-mnemonic");
-    cmd.arg("--chain");
-    cmd.arg(chain);
-    cmd.arg("--keystore_password");
-    cmd.arg(expected_decryption_password);
-    cmd.arg("--mnemonic");
-    cmd.arg(expected_mnemonic);
-    cmd.arg("--num_validators");
-    cmd.arg(num_validators);
-    cmd.arg("--validator_start_index");
-    cmd.arg(validator_start_index);
-    cmd.arg("--withdrawal_credentials");
-    cmd.arg(execution_withdrawal_credentials);
+        cmd.assert().success();
 
-    cmd.assert().success();
+        // read generated output
 
-    // read generated output
+        let output = &cmd.output()?.stdout;
+        let command_output = std::str::from_utf8(output)?;
+        let generated_validator_json: ValidatorExports =
+            serde_json::from_str(command_output).expect("could not unmarshal command output");
+        let generated_private_keys = generated_validator_json.private_keys;
+        let generated_deposit_data = generated_validator_json.deposit_data;
 
-    let output = &cmd.output()?.stdout;
-    let command_output = std::str::from_utf8(output)?;
-    let generated_validator_json: ValidatorExports =
-        serde_json::from_str(command_output).expect("could not unmarshal command output");
-    let generated_private_keys = generated_validator_json.private_keys;
-    let generated_deposit_data = generated_validator_json.deposit_data;
+        // decrypt keystore with expected password to derive private key and compare private keys
+        for index in 0..expected_keystore_jsons.len() {
+            let expected_private_key_txt = eth2_keystore::decrypt(
+                expected_decryption_password.as_bytes(),
+                &expected_keystore_jsons[index].crypto,
+            )
+            .expect("could not decrypt keystore");
+            let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
+            assert_eq!(
+                expected_private_key,
+                generated_private_keys[index].to_owned()
+            );
+        }
 
-    // decrypt keystore with expected password to derive private key and compare private keys
-    for index in 0..expected_keystore_jsons.len() {
-        let expected_private_key_txt = eth2_keystore::decrypt(
-            expected_decryption_password.as_bytes(),
-            &expected_keystore_jsons[index].crypto,
-        )
-        .expect("could not decrypt keystore");
-        let expected_private_key = hex::encode(expected_private_key_txt.as_bytes());
-        assert_eq!(
-            expected_private_key,
-            generated_private_keys[index].to_owned()
-        );
-    }
+        // compare deposit data entries
+        for index in 0..expected_deposit_data_json.len() {
+            let expected_deposit_data_json = &expected_deposit_data_json[index];
 
-    // compare deposit data entries
-    for index in 0..expected_deposit_data_json.len() {
-        let expected_deposit_data_json = &expected_deposit_data_json[index];
-
-        assert_eq!(
-            expected_deposit_data_json.pubkey.to_string(),
-            generated_deposit_data[index].pubkey
-        );
-        assert_eq!(
-            expected_deposit_data_json
-                .withdrawal_credentials
-                .to_string(),
-            generated_deposit_data[index].withdrawal_credentials
-        );
-        assert_eq!(
-            expected_deposit_data_json.amount.to_string(),
-            generated_deposit_data[index].amount.to_string()
-        );
-
-        // Updated for Sepolia signatures, index 1 and 2 (validator_start_index is 1)
-        let expected_signature = if index == 0 {
-            "a94ea5f2ab6dc4f1cae370dee6e07cbd9d8695ec1851a17674692d4070dc9b87c228cf9fbdbd2482c38787932afc02fe07d71dbe7cf446fdf404f42d661b5997a308bd3dcb4b23848929843701755c7bc255bcd7282a7b681bf30d709da0bf09"
-        } else {
-            "a7f9ff7d107174011695a8a90de3b875aa5b8c3e5d581b38c424307f9c98bc999ca4dcc125d7e9756c459189f1fce3e505959f903db0ae3cc52f62a6555d5eed455030c2020b6f81f4be99f6572ce5892aa07c37d19cc278f3462af9b0f6e6ad"
-        };
-
-        assert_eq!(
-            expected_signature,
-            generated_deposit_data[index].signature.to_string()
-        );
+            assert_eq!(
+                expected_deposit_data_json.pubkey.to_string(),
+                generated_deposit_data[index].pubkey
+            );
+            assert_eq!(
+                expected_deposit_data_json
+                    .withdrawal_credentials
+                    .to_string(),
+                generated_deposit_data[index].withdrawal_credentials
+            );
+            assert_eq!(
+                expected_deposit_data_json.amount.to_string(),
+                generated_deposit_data[index].amount.to_string()
+            );
+            assert_eq!(
+                expected_deposit_data_json.signature,
+                generated_deposit_data[index].signature.to_string()
+            );
+        }
     }
 
     Ok(())
