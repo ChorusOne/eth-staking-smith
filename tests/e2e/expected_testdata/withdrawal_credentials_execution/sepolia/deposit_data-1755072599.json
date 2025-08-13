@@ -1,0 +1,13 @@
+[
+    {
+        "pubkey": "8f7c2bd57e3d314a38149c27b55d4d68620f7ca447f16d82f3a04e3b9ed100132b7b32c9d68b30024aaec7f5ed502b7c",
+        "withdrawal_credentials": "01000000000000000000000071c7656ec7ab88b098defb751b7401b5f6d8976f",
+        "amount": 32000000000,
+        "signature": "b1b8fe05cdd73003849d61c054f3189dc9a22c5539d6c50efad00157beb30971a38102890fadce10c6355ea023e8df341190e22838e0740a70958f988cbbc4d3ac3c00206b85fa52885b4f52ec92daf84f19432bd608cd8ffa61e78df57da273",
+        "deposit_message_root": "95b91817529cbefc8d9f7f0edc02b37622c84a0bad5c01fcccda1e09bb394572",
+        "deposit_data_root": "4bc8ecf76b2c2b3de49f18546f8c3c649e09d3db825acecce4b14a278c58cbf4",
+        "fork_version": "90000069",
+        "network_name": "sepolia",
+        "deposit_cli_version": "1.2.2"
+    }
+]
