@@ -19,6 +19,7 @@ const ETH1_CREDENTIALS_PREFIX: &[u8] = &[
     48, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
 ];
 const ETH2_CREDENTIALS_PREFIX: &[u8] = &[48, 48];
+const COMPOUNDING_CREDENTIALS_PREFIX: &[u8] = &[48, 50]; // "02" in ASCII
 
 pub struct Validators {
     mnemonic_phrase: String,
@@ -61,11 +62,12 @@ impl DepositExport {
             && !withdrawal_credentials
                 .as_bytes()
                 .starts_with(ETH2_CREDENTIALS_PREFIX)
+            && !withdrawal_credentials
+                .as_bytes()
+                .starts_with(COMPOUNDING_CREDENTIALS_PREFIX)
         {
             panic!("withdrawal address has unexpected prefix");
         }
-
-        assert_eq!(32000000000, self.amount);
 
         let pubkey =
             PublicKey::from_str(&format!("0x{}", pub_key)).expect("could not parse public key");
@@ -231,6 +233,7 @@ impl Validators {
         network: Option<SupportedNetworks>,
         withdrawal_credentials: Option<String>,
         deposit_amount_gwei: u64,
+        compounding: bool,
         deposit_cli_version: String,
         chain_spec_file: Option<String>,
     ) -> Result<ValidatorExports, DepositError> {
@@ -251,6 +254,7 @@ impl Validators {
             let withdrawal_credentials = set_withdrawal_credentials(
                 withdrawal_credentials.clone(),
                 key_with_store.withdrawal_keypair.clone(),
+                compounding,
             )?;
 
             let public_key = key_with_store.keypair.pk.as_hex_string().replace("0x", "");
@@ -295,9 +299,61 @@ impl Validators {
 fn set_withdrawal_credentials(
     existing_withdrawal_credentials: Option<String>,
     derived_withdrawal_credentials: Option<Keypair>,
+    compounding: bool,
 ) -> Result<Vec<u8>, DepositError> {
-    let withdrawal_credentials = match existing_withdrawal_credentials {
-        Some(creds) => {
+    let withdrawal_credentials = match (existing_withdrawal_credentials, compounding) {
+        // If compounding flag is set with explicit credentials, convert them to 0x02 format
+        (Some(creds), true) => {
+            if crate::utils::EXECUTION_ADDR_REGEX.is_match(creds.as_str()) {
+                // Convert execution address to 0x02 compounding credentials
+                let mut formatted_creds = COMPOUNDING_CREDENTIALS_PREFIX.to_vec();
+                formatted_creds.extend_from_slice(&creds.as_bytes()[2..]);
+                // Pad with zeros to make it 64 hex chars (32 bytes)
+                while formatted_creds.len() < 64 {
+                    formatted_creds.insert(2, b'0');
+                }
+                hex::decode(formatted_creds).expect("could not decode hex address")
+            } else if crate::utils::EXECUTION_CREDS_REGEX.is_match(creds.as_str()) {
+                // Convert 0x01 execution credentials to 0x02 compounding credentials
+                let mut creds_bytes =
+                    hex::decode(&creds.as_bytes()[2..]).expect("could not decode hex");
+                creds_bytes[0] = 0x02; // Change prefix from 0x01 to 0x02
+                creds_bytes
+            } else if crate::utils::COMPOUNDING_CREDS_REGEX.is_match(creds.as_str()) {
+                // Already compounding credentials, use as-is
+                hex::decode(&creds.as_bytes()[2..]).expect("could not decode hex")
+            } else if crate::utils::BLS_CREDS_REGEX.is_match(creds.as_str()) {
+                // BLS credentials can't be converted to compounding, fall back to derived
+                let withdrawal_pk = match derived_withdrawal_credentials {
+                    Some(pk) => pk.pk,
+                    None => {
+                        return Err(DepositError::InvalidWithdrawalCredentials(
+                            "Could not retrieve withdrawal public key from key material"
+                                .to_string(),
+                        ))
+                    }
+                };
+                get_withdrawal_credentials(&withdrawal_pk.into(), 2)
+            } else {
+                return Err(DepositError::InvalidWithdrawalCredentials(
+                    "Invalid withdrawal address: Please pass in a valid execution address, execution, BLS, or compounding (0x02) credentials with the correct format".to_string(),
+                ));
+            }
+        }
+        // If compounding flag is set without explicit credentials, generate 0x02 from derived key
+        (None, true) => {
+            let withdrawal_pk = match derived_withdrawal_credentials {
+                Some(pk) => pk.pk,
+                None => {
+                    return Err(DepositError::InvalidWithdrawalCredentials(
+                        "Could not retrieve withdrawal public key from key material".to_string(),
+                    ))
+                }
+            };
+            get_withdrawal_credentials(&withdrawal_pk.into(), 2)
+        }
+        // If no compounding flag and explicit credentials provided, use them as-is
+        (Some(creds), false) => {
             let withdrawal_credentials = if crate::utils::EXECUTION_ADDR_REGEX
                 .is_match(creds.as_str())
             {
@@ -306,28 +362,30 @@ fn set_withdrawal_credentials(
                 formatted_creds
             } else if crate::utils::EXECUTION_CREDS_REGEX.is_match(creds.as_str())
                 || crate::utils::BLS_CREDS_REGEX.is_match(creds.as_str())
+                || crate::utils::COMPOUNDING_CREDS_REGEX.is_match(creds.as_str())
             {
                 // see format of execution & bls credentials https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#bls_withdrawal_prefix
+                // and EIP-7251 compounding credentials
                 let formatted_creds = creds.as_bytes()[2..].to_vec();
                 formatted_creds
             } else {
                 return Err(DepositError::InvalidWithdrawalCredentials(
-                    "Invalid withdrawal address: Please pass in a valid execution address, execution or BLS credentials with the correct format".to_string(),
+                    "Invalid withdrawal address: Please pass in a valid execution address, execution, BLS, or compounding (0x02) credentials with the correct format".to_string(),
                 ));
             };
 
             hex::decode(withdrawal_credentials).expect("could not decode hex address ")
         }
-        None => {
+        // If no compounding flag and no explicit credentials, use 0x00 BLS
+        (None, false) => {
             let withdrawal_pk = match derived_withdrawal_credentials {
                 Some(pk) => pk.pk,
                 None => {
                     return Err(DepositError::InvalidWithdrawalCredentials(
-                        "Could not retrieve withdrawal public key from key matieral".to_string(),
+                        "Could not retrieve withdrawal public key from key material".to_string(),
                     ))
                 }
             };
-
             get_withdrawal_credentials(&withdrawal_pk.into(), 0)
         }
     };
@@ -370,6 +428,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -379,6 +438,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -429,6 +489,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -438,6 +499,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -488,6 +550,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -497,6 +560,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -539,6 +603,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -548,6 +613,7 @@ mod test {
                     Some(SupportedNetworks::Mainnet),
                     Some("0x0000000000000000000000000000000000000001".to_string()),
                     32_000_000_000,
+                    false,
                     "2.7.0".to_string(),
                     None,
                 )
@@ -587,6 +653,7 @@ mod test {
                 Some(SupportedNetworks::Mainnet),
                 None,
                 32_000_000_000,
+                false,
                 "2.7.0".to_string(),
                 None,
             )
@@ -615,6 +682,7 @@ mod test {
         let response = set_withdrawal_credentials(
             Some("0x01D4BB555d3B0D7fF17c606161B44E372689C14F4B".to_string()),
             None,
+            false,
         );
         assert!(response.is_err());
     }
@@ -624,6 +692,7 @@ mod test {
         let response = set_withdrawal_credentials(
             Some("0xD4BB555d3B0D7fF17c606161B44E372689C14F4B".to_string()),
             None,
+            false,
         );
         assert!(response.is_ok());
     }
@@ -633,6 +702,7 @@ mod test {
         let response = set_withdrawal_credentials(
             Some("0x0100000000000000000000000000000000000000000000000000000000000001".to_string()),
             None,
+            false,
         );
 
         assert!(response.is_ok());
@@ -644,6 +714,7 @@ mod test {
         let response = set_withdrawal_credentials(
             Some("0x45b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d".to_string()),
             None,
+            false,
         );
         assert!(response.is_err());
     }
@@ -653,6 +724,7 @@ mod test {
         let response = set_withdrawal_credentials(
             Some("0x0045b91b2f60b88e7392d49ae1364b55e713d06f30e563f9f99e10994b26221d".to_string()),
             None,
+            false,
         );
         assert!(response.is_ok());
     }
@@ -660,14 +732,14 @@ mod test {
     #[test]
     fn set_withdrawal_credentials_error_no_key() {
         // either withdrawal public key or withdrawal credentials must be provided
-        let response = set_withdrawal_credentials(None, None);
+        let response = set_withdrawal_credentials(None, None, false);
         assert!(response.is_err());
     }
 
     #[test]
     fn set_withdrawal_credentials_from_public_key() {
         let keypair = Keypair::random();
-        let response = set_withdrawal_credentials(None, Some(keypair));
+        let response = set_withdrawal_credentials(None, Some(keypair), false);
         assert!(response.is_ok());
     }
 }

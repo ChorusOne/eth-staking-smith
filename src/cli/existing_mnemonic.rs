@@ -45,12 +45,12 @@ pub struct ExistingMnemonicSubcommandOpts {
     pub validator_start_index: Option<u32>,
 
     /// If this field is set and valid, the given
-    /// value will be used to set the
-    /// withdrawal credentials. Otherwise, it will
-    /// generate withdrawal credentials with the
-    /// mnemonic-derived withdrawal public key. Valid formats are
-    /// ^(0x[a-fA-F0-9]{40})$ for execution addresses,
-    /// ^(0x01[0]{22}[a-fA-F0-9]{40})$ for execution withdrawal credentials
+    /// value will be used to set the withdrawal credentials.
+    /// When --compounding is specified, execution addresses and 0x01
+    /// credentials will be converted to 0x02 compounding credentials.
+    /// Valid formats are ^(0x[a-fA-F0-9]{40})$ for execution addresses,
+    /// ^(0x01[0]{22}[a-fA-F0-9]{40})$ for execution withdrawal credentials,
+    /// ^(0x02[a-fA-F0-9]{62})$ for EIP-7251 compounding withdrawal credentials (supports variable deposits up to 2048 ETH),
     /// and ^(0x00[a-fA-F0-9]{62})$ for BLS withdrawal credentials.
     #[arg(long, visible_alias = "withdrawal_credentials")]
     pub withdrawal_credentials: Option<String>,
@@ -70,6 +70,20 @@ pub struct ExistingMnemonicSubcommandOpts {
     /// A version of CLI to include into generated deposit data
     #[arg(long, visible_alias = "deposit_cli_version", default_value = "2.7.0")]
     pub deposit_cli_version: String,
+
+    /// Deposit amount in ETH.
+    /// For standard validators: exactly 32 ETH.
+    /// For EIP-7251 compounding validators (0x02 withdrawal credentials): 32 to 2048 ETH.
+    #[arg(long, visible_alias = "deposit_amount", default_value = "32")]
+    pub deposit_amount_eth: u64,
+
+    /// Use EIP-7251 compounding withdrawal credentials (0x02).
+    ///
+    /// When enabled, validators will use 0x02 withdrawal credentials which support
+    /// compounding rewards and variable deposit amounts up to 2048 ETH.
+    /// When disabled, validators use traditional 0x00 BLS withdrawal credentials.
+    #[arg(long)]
+    pub compounding: bool,
 }
 
 impl ExistingMnemonicSubcommandOpts {
@@ -93,14 +107,15 @@ impl ExistingMnemonicSubcommandOpts {
             password,
             Some(self.num_validators),
             self.validator_start_index,
-            self.withdrawal_credentials.is_none(),
+            self.withdrawal_credentials.is_none() || self.compounding,
             self.kdf.clone(),
         );
         let export: serde_json::Value = validators
             .export(
                 chain,
                 self.withdrawal_credentials.clone(),
-                32_000_000_000,
+                self.deposit_amount_eth * 1_000_000_000, // Convert ETH to Gwei
+                self.compounding,
                 self.deposit_cli_version.clone(),
                 self.testnet_config.clone(),
             )

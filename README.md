@@ -38,6 +38,24 @@ Generate key and deposit data with a new mnemonic:
 ./target/debug/eth-staking-smith new-mnemonic --chain mainnet --keystore_password testtest --num_validators 1
 ```
 
+### EIP-7251 Type 2 Compounding Validators
+
+Generate validators with variable deposits up to 2048 ETH.
+
+```
+# Default 32 ETH compounding validator
+./target/debug/eth-staking-smith new-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --compounding
+
+# Type 2 compounding validator with 100 ETH
+./target/debug/eth-staking-smith new-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --deposit_amount_eth 100 --compounding
+
+# Maximum 2048 ETH compounding validator
+./target/debug/eth-staking-smith new-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --deposit_amount_eth 2048 --compounding
+
+# Legacy 32 ETH validator with BLS withdrawal credentials
+./target/debug/eth-staking-smith new-mnemonic --chain mainnet --keystore_password testtest --num_validators 1 --withdrawal_credentials "0x00abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456"
+```
+
 ## Existing mnemonic
 
 Regenerate key and deposit data with existing mnemonic:

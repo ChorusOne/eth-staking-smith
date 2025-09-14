@@ -5,6 +5,7 @@ use crate::{
     chain_spec::{chain_spec_for_network, chain_spec_from_file},
     key_material::VotingKeyMaterial,
     networks::SupportedNetworks,
+    utils::{is_compounding_withdrawal_credentials, validate_deposit_amount},
 };
 
 #[derive(Debug, Eq, PartialEq)]
@@ -36,12 +37,13 @@ pub(crate) fn keystore_to_deposit(
         ));
     };
 
-    // For simplicity, support only 32Eth deposits
-    if deposit_amount_gwei != 32_000_000_000 {
-        return Err(DepositError::InvalidDepositAmount(
-            "Invalid amount of deposit data, should be 32Eth".to_string(),
-        ));
-    };
+    // Validate deposit amount based on withdrawal credentials type
+    let withdrawal_creds_hex = hex::encode(withdrawal_credentials);
+    let is_compounding = is_compounding_withdrawal_credentials(&withdrawal_creds_hex);
+
+    if let Err(msg) = validate_deposit_amount(deposit_amount_gwei, is_compounding) {
+        return Err(DepositError::InvalidDepositAmount(msg));
+    }
 
     let spec = match network {
         Some(chain) => chain_spec_for_network(&chain)?,

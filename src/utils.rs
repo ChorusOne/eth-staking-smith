@@ -45,6 +45,56 @@ pub fn withdrawal_creds_from_pk(withdrawal_pk: &PublicKeyBytes) -> String {
     hex::encode(withdrawal_creds)
 }
 
+/// Creates 0x02 compounding withdrawal credentials from BLS public key (EIP-7251)
+///
+/// Used for type 2 validators that support compounding rewards up to 2048 ETH
+pub fn compounding_withdrawal_creds_from_pk(withdrawal_pk: &PublicKeyBytes) -> String {
+    let withdrawal_creds = get_withdrawal_credentials(withdrawal_pk, 2);
+    hex::encode(withdrawal_creds)
+}
+
+/// Validates deposit amount according to Ethereum staking rules
+///
+/// Post-Pectra (EIP-7251): 32 ETH to 2048 ETH for compounding validators
+/// Pre-Pectra: Only 32 ETH allowed
+pub fn validate_deposit_amount(amount_gwei: u64, is_compounding: bool) -> Result<(), String> {
+    const MIN_DEPOSIT_GWEI: u64 = 32_000_000_000; // 32 ETH
+    const MAX_EFFECTIVE_BALANCE: u64 = 2_048_000_000_000; // 2048 ETH
+
+    if amount_gwei < MIN_DEPOSIT_GWEI {
+        return Err(format!(
+            "Deposit amount must be at least 32 ETH (got {} Gwei)",
+            amount_gwei
+        ));
+    }
+
+    if is_compounding {
+        if amount_gwei > MAX_EFFECTIVE_BALANCE {
+            return Err(format!(
+                "Compounding validator deposit amount cannot exceed 2048 ETH (got {} Gwei)",
+                amount_gwei
+            ));
+        }
+    } else if amount_gwei != MIN_DEPOSIT_GWEI {
+        return Err(format!(
+            "Non-compounding validator deposit amount must be exactly 32 ETH (got {} Gwei)",
+            amount_gwei
+        ));
+    }
+
+    Ok(())
+}
+
+/// Determines if withdrawal credentials indicate a compounding validator (0x02 prefix)
+pub fn is_compounding_withdrawal_credentials(withdrawal_credentials: &str) -> bool {
+    let creds = if let Some(stripped) = withdrawal_credentials.strip_prefix("0x") {
+        stripped
+    } else {
+        withdrawal_credentials
+    };
+    creds.starts_with("02")
+}
+
 // Various regexes used for input validation
 lazy_static::lazy_static! {
     /// see format of execution address: https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/validator.md#eth1_address_withdrawal_prefix
@@ -52,4 +102,6 @@ lazy_static::lazy_static! {
     pub static ref EXECUTION_CREDS_REGEX: Regex =
         Regex::new(r"^(0x01[0]{22}[a-fA-F0-9]{40})$").unwrap();
     pub static ref BLS_CREDS_REGEX: Regex = Regex::new(r"^(0x00[a-fA-F0-9]{62})$").unwrap();
+    /// EIP-7251 compounding withdrawal credentials pattern
+    pub static ref COMPOUNDING_CREDS_REGEX: Regex = Regex::new(r"^(0x02[a-fA-F0-9]{62})$").unwrap();
 }
