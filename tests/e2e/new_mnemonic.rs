@@ -630,3 +630,79 @@ fn parse_kdf_function(keystore: &Keystore) -> String {
         .unwrap();
     kdf_function
 }
+
+/*
+    generate validator with deposit amount specified in gwei
+*/
+#[test]
+fn test_deposit_amount_gwei() -> Result<(), Box<dyn std::error::Error>> {
+    let chain = SupportedNetworks::Sepolia;
+    let decryption_password = "testtest";
+    let num_validators = "1";
+    let deposit_amount_gwei = "32000000000"; // 32 ETH in gwei
+
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("new-mnemonic");
+    cmd.arg("--chain");
+    cmd.arg(chain.to_string());
+    cmd.arg("--keystore_password");
+    cmd.arg(decryption_password);
+    cmd.arg("--num_validators");
+    cmd.arg(num_validators);
+    cmd.arg("--deposit-amount-gwei");
+    cmd.arg(deposit_amount_gwei);
+
+    cmd.assert().success();
+
+    let output = &cmd
+        .output()
+        .expect("could not get output from command")
+        .stdout;
+    let command_output = std::str::from_utf8(output).expect("could not parse output into string");
+    let generated_validator_json: ValidatorExports =
+        serde_json::from_str(command_output).expect("could not unmarshal command output");
+    let generated_deposit_data = generated_validator_json
+        .deposit_data
+        .get(0)
+        .expect("could not get generated deposit data")
+        .to_owned();
+
+    // verify the deposit amount is correct
+    assert_eq!(generated_deposit_data.amount, 32000000000);
+
+    generated_deposit_data
+        .validate(eth_staking_smith::chain_spec::chain_spec_for_network(&chain).unwrap());
+
+    Ok(())
+}
+
+/*
+    test that deposit-amount-eth and deposit-amount-gwei flags conflict
+*/
+#[test]
+fn test_conflicting_deposit_flags() -> Result<(), Box<dyn std::error::Error>> {
+    let chain = "sepolia";
+    let decryption_password = "testtest";
+    let num_validators = "1";
+
+    let mut cmd = Command::cargo_bin("eth-staking-smith")?;
+
+    cmd.arg("new-mnemonic");
+    cmd.arg("--chain");
+    cmd.arg(chain);
+    cmd.arg("--keystore_password");
+    cmd.arg(decryption_password);
+    cmd.arg("--num_validators");
+    cmd.arg(num_validators);
+    cmd.arg("--deposit-amount-eth");
+    cmd.arg("32");
+    cmd.arg("--deposit-amount-gwei");
+    cmd.arg("32000000000");
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("cannot be used with"));
+
+    Ok(())
+}

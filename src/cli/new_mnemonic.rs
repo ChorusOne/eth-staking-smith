@@ -63,8 +63,21 @@ pub struct NewMnemonicSubcommandOpts {
     /// Deposit amount in ETH.
     /// For standard validators: exactly 32 ETH.
     /// For EIP-7251 compounding validators (0x02 withdrawal credentials): 32 to 2048 ETH.
-    #[arg(long, visible_alias = "deposit_amount", default_value = "32")]
+    /// Cannot be used together with --deposit-amount-gwei flag.
+    #[arg(
+        long,
+        visible_alias = "deposit_amount",
+        default_value = "32",
+        conflicts_with = "deposit_amount_gwei"
+    )]
     pub deposit_amount_eth: u64,
+
+    /// Deposit amount in Gwei.
+    /// For standard validators: exactly 32000000000 Gwei (32 ETH).
+    /// For EIP-7251 compounding validators (0x02 withdrawal credentials): 32000000000 to 2048000000000 Gwei.
+    /// Cannot be used together with --deposit-amount-eth flag.
+    #[arg(long, conflicts_with = "deposit_amount_eth")]
+    pub deposit_amount_gwei: Option<u64>,
 
     /// Use EIP-7251 compounding withdrawal credentials (0x02).
     ///
@@ -91,6 +104,12 @@ impl NewMnemonicSubcommandOpts {
             .clone()
             .map(|p| p.as_bytes().to_owned());
 
+        let deposit_amount_gwei = if let Some(gwei) = self.deposit_amount_gwei {
+            gwei
+        } else {
+            self.deposit_amount_eth * 1_000_000_000 // Convert ETH to Gwei
+        };
+
         let validators = Validators::new(
             None,
             password,
@@ -103,7 +122,7 @@ impl NewMnemonicSubcommandOpts {
             .export(
                 chain,
                 self.withdrawal_credentials.clone(),
-                self.deposit_amount_eth * 1_000_000_000, // Convert ETH to Gwei
+                deposit_amount_gwei,
                 self.compounding,
                 self.deposit_cli_version.clone(),
                 self.testnet_config.clone(),
